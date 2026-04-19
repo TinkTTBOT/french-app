@@ -1053,6 +1053,7 @@ function toggleFavorite() {
   } else {
     favoriteWords.push(index);
     setStatus("Đã thêm vào yêu thích.");
+    addPoints('favorite_word');
   }
   saveState();
   updateFavoriteButton();
@@ -1124,6 +1125,10 @@ function createPronunciationRecognition() {
     if (speechFeedback) {
       speechFeedback.textContent = feedback;
       speechFeedback.classList.remove("hidden");
+    }
+
+    if (match) {
+      addPoints('pronounce_correct');
     }
 
     setStatus(match ? "Phát âm ổn." : "Hãy thử lại, nói rõ hơn từ tiếng Pháp hiện tại.");
@@ -1358,6 +1363,24 @@ function loadState() {
     if (typeof state.searchQuery === "string") searchQuery = state.searchQuery;
     if (typeof state.showFavorites === "boolean") showFavorites = state.showFavorites;
     if (Array.isArray(state.favoriteWords)) favoriteWords = state.favoriteWords;
+    if (typeof state.selectedDialogueTopic === "string") selectedDialogueTopic = state.selectedDialogueTopic;
+    if (typeof state.autoPlayAudio === "boolean") autoPlayAudio = state.autoPlayAudio;
+    if (typeof state.voiceLang === "string") voiceLang = state.voiceLang;
+    // Gamification
+    if (typeof state.userPoints === "number") userPoints = state.userPoints;
+    if (typeof state.userLevel === "number") userLevel = state.userLevel;
+    if (typeof state.currentStreak === "number") currentStreak = state.currentStreak;
+    if (typeof state.lastActivityDate === "string") lastActivityDate = state.lastActivityDate;
+    if (typeof state.dailyGoal === "number") dailyGoal = state.dailyGoal;
+    if (typeof state.dailyProgress === "number") dailyProgress = state.dailyProgress;
+    if (Array.isArray(state.unlockedBadges)) unlockedBadges = state.unlockedBadges;
+    if (typeof state.enableSpacedRepetition === "boolean") enableSpacedRepetition = state.enableSpacedRepetition;
+    if (typeof state.enableDailyGoal === "boolean") enableDailyGoal = state.enableDailyGoal;
+    if (typeof state.showStreak === "boolean") showStreak = state.showStreak;
+    if (typeof state.showPoints === "boolean") showPoints = state.showPoints;
+    if (typeof state.compactMode === "boolean") compactMode = state.compactMode;
+    if (typeof state.wordStudyData === "object") wordStudyData = state.wordStudyData;
+    if (Array.isArray(state.dialogueHistory)) dialogueHistory = state.dialogueHistory;
   } catch (error) {
     console.warn("Không tải được trạng thái lưu trữ:", error);
   }
@@ -1431,6 +1454,9 @@ function renderExercise() {
   exerciseTotal.textContent = questions.length;
   exerciseQuestion.textContent = questions.length ? quiz.question : "Chọn chủ đề để hiển thị bài tập.";
   exerciseOptions.innerHTML = "";
+  if (!sessionStorage.getItem('quizStartTime')) {
+    sessionStorage.setItem('quizStartTime', Date.now());
+  }
 
   if (questions.length) {
     quiz.options.forEach((text, index) => {
@@ -1482,36 +1508,41 @@ function updateWord() {
 function nextWord() {
   const indexes = getFilteredWordIndexes();
   if (!indexes.length) return;
-  const currentPos = indexes.indexOf(currentIndex);
-  const nextPos = currentPos === -1 ? 0 : (currentPos + 1) % indexes.length;
-  currentIndex = indexes[nextPos];
+  const prioritized = prioritizeWords(indexes);
+  const currentPos = prioritized.indexOf(currentIndex);
+  const nextPos = currentPos === -1 ? 0 : (currentPos + 1) % prioritized.length;
+  currentIndex = prioritized[nextPos];
   meaningVisible = false;
   updateWord();
   addRecentWord(words[currentIndex].fr);
+  updateWordReviewData(currentIndex);
   saveState();
 }
 
 function prevWord() {
   const indexes = getFilteredWordIndexes();
   if (!indexes.length) return;
-  const currentPos = indexes.indexOf(currentIndex);
-  const prevPos = currentPos <= 0 ? indexes.length - 1 : currentPos - 1;
-  currentIndex = indexes[prevPos];
+  const prioritized = prioritizeWords(indexes);
+  const currentPos = prioritized.indexOf(currentIndex);
+  const prevPos = currentPos <= 0 ? prioritized.length - 1 : currentPos - 1;
+  currentIndex = prioritized[prevPos];
   meaningVisible = false;
   updateWord();
   addRecentWord(words[currentIndex].fr);
+  updateWordReviewData(currentIndex);
   saveState();
 }
 
 function randomWord() {
   const indexes = getFilteredWordIndexes();
   if (!indexes.length) return;
+  const prioritized = prioritizeWords(indexes);
   let nextIndex = currentIndex;
-  if (indexes.length === 1) {
-    nextIndex = indexes[0];
+  if (prioritized.length === 1) {
+    nextIndex = prioritized[0];
   } else {
     while (nextIndex === currentIndex) {
-      nextIndex = indexes[Math.floor(Math.random() * indexes.length)];
+      nextIndex = prioritized[Math.floor(Math.random() * prioritized.length)];
     }
   }
   currentIndex = nextIndex;
@@ -1562,6 +1593,27 @@ function renderProgress() {
   progressPoints.textContent = score;
   progressLessons.textContent = lessonSeen ? lessons.length : 0;
   progressLessonTotal.textContent = lessons.length;
+  
+  // Add Spaced Repetition stats if enabled
+  if (enableSpacedRepetition) {
+    const srStats = getSpacedRepetitionStats();
+    if (srStats) {
+      const srDiv = document.getElementById('spacedRepetitionStats');
+      if (srDiv) {
+        srDiv.innerHTML = `
+          <div style="padding: 12px; background: rgba(102, 51, 153, 0.1); border-radius: 6px; margin-top: 10px;">
+            <strong>Spaced Repetition:</strong>
+            <div style="font-size: 13px; margin-top: 6px;">
+              Cần ôn tập: <strong style="color: #ff6b6b;">${srStats.dueForReview}</strong> |
+              Đã học: <strong style="color: #51cf66;">${srStats.reviewedWords}</strong> |
+              Thành thạo: <strong style="color: #4dabf7;">${srStats.masteredWords}</strong>
+            </div>
+          </div>
+        `;
+      }
+    }
+  }
+  
   renderRecentList();
 }
 
@@ -1571,15 +1623,27 @@ function selectTab(tabName) {
   const isLesson = tabName === "lesson";
   const isExercise = tabName === "exercise";
   const isFlashcard = tabName === "flashcard";
+  const isDialogue = tabName === "dialogue";
   const isProgress = tabName === "progress";
+  const isAchievements = tabName === "achievements";
+  const isSettings = tabName === "settings";
 
   vocabSection.classList.toggle("hidden", !isVocab);
   vocabControls.classList.toggle("hidden", !isVocab);
   vocabList.classList.toggle("hidden", !isVocab);
+  
+  const vocabToolbar = document.querySelector('.vocab-toolbar');
+  if (vocabToolbar) {
+    vocabToolbar.classList.toggle("hidden", !isVocab);
+  }
+  
   lessonSection.classList.toggle("hidden", !isLesson);
   exerciseSection.classList.toggle("hidden", !isExercise);
   flashcardSection.classList.toggle("hidden", !isFlashcard);
+  document.getElementById("dialogueSection").classList.toggle("hidden", !isDialogue);
   progressSection.classList.toggle("hidden", !isProgress);
+  document.getElementById("achievementsSection").classList.toggle("hidden", !isAchievements);
+  document.getElementById("settingsSection").classList.toggle("hidden", !isSettings);
 
   if (isLesson) {
     lessonSeen = true;
@@ -1587,6 +1651,27 @@ function selectTab(tabName) {
 
   if (isFlashcard) {
     updateFlashcard();
+  }
+
+  if (isDialogue) {
+    const dialogueInput = document.getElementById('dialogueInput');
+    if (dialogueInput) dialogueInput.focus();
+  }
+
+  if (isAchievements) {
+    renderAchievements();
+  }
+
+  if (isSettings) {
+    loadSettings();
+  }
+
+  if (isVocab) {
+    // Show reminders when switching to vocab tab
+    const srStats = enableSpacedRepetition ? getSpacedRepetitionStats() : null;
+    if (srStats && srStats.dueForReview > 0) {
+      setStatus(`⏰ ${srStats.dueForReview} từ cần ôn tập hôm nay`);
+    }
   }
 
   renderProgress();
@@ -1604,6 +1689,10 @@ function checkAnswer() {
     return;
   }
 
+  const quizStartTime = sessionStorage.getItem('quizStartTime');
+  const quizTimeSeconds = quizStartTime ? Math.round((Date.now() - parseInt(quizStartTime)) / 1000) : 0;
+  sessionStorage.setItem('lastQuizTime', quizTimeSeconds);
+
   const questions = getFilteredQuizQuestions();
   const quiz = questions[currentExercise] || quizQuestions[0];
   const userAnswer = Number(selected.value);
@@ -1611,8 +1700,13 @@ function checkAnswer() {
   if (userAnswer === correctAnswer) {
     score += 1;
     exerciseFeedback.textContent = "Chính xác! Bạn đã trả lời đúng.";
+    addPoints('correct_quiz');
+    updateStreak();
+    const currentPerfectStreak = (parseInt(localStorage.getItem('perfectQuizStreak')) || 0) + 1;
+    localStorage.setItem('perfectQuizStreak', currentPerfectStreak);
   } else {
     exerciseFeedback.textContent = `Sai rồi. Đáp án đúng là: ${quiz.options[correctAnswer]}`;
+    localStorage.setItem('perfectQuizStreak', '0');
   }
 
   completed = true;
@@ -1631,11 +1725,572 @@ function nextExercise() {
   saveState();
 }
 
+// ===== Gamification System =====
+let userPoints = 0;
+let userLevel = 1;
+let currentStreak = 0;
+let lastActivityDate = new Date().toDateString();
+let dailyGoal = 20;
+let dailyProgress = 0;
+let unlockedBadges = [];
+let enableSpacedRepetition = true;
+let enableDailyGoal = true;
+let showStreak = true;
+let showPoints = true;
+let compactMode = false;
+
+// Word study details for spaced repetition
+let wordStudyData = {};
+
+const BADGES = [
+  { id: 'first_word', name: 'Bước Đầu', emoji: '🌱', description: 'Học từ đầu tiên', requirement: { type: 'learn', value: 1 } },
+  { id: 'vocab_master', name: 'Chuyên Gia Từ Vựng', emoji: '📚', description: 'Học 50 từ', requirement: { type: 'learn', value: 50 } },
+  { id: 'vocab_legend', name: 'Huyền Thoại Từ Vựng', emoji: '⭐', description: 'Học 100 từ', requirement: { type: 'learn', value: 100 } },
+  { id: 'perfect_quiz', name: 'Trắc Nghiệm Hoàn Hảo', emoji: '💯', description: 'Trả lời đúng 10 câu liên tiếp', requirement: { type: 'perfect_quiz', value: 10 } },
+  { id: 'streak_3', name: 'Chuỗi 3 Ngày', emoji: '🔥', description: 'Học liên tiếp 3 ngày', requirement: { type: 'streak', value: 3 } },
+  { id: 'streak_7', name: 'Tuần Học Tập', emoji: '🌟', description: 'Học liên tiếp 7 ngày', requirement: { type: 'streak', value: 7 } },
+  { id: 'daily_master', name: 'Chuyên Gia Hàng Ngày', emoji: '⚡', description: 'Hoàn thành 3 mục tiêu hàng ngày', requirement: { type: 'daily_goals', value: 3 } },
+  { id: 'speed_reader', name: 'Người Đọc Nhanh', emoji: '💨', description: 'Hoàn thành quiz trong 30 giây', requirement: { type: 'speed', value: 30 } },
+  { id: 'flashcard_master', name: 'Thợ Flashcard', emoji: '🎴', description: 'Học 30 flashcard', requirement: { type: 'flashcards', value: 30 } },
+  { id: 'thousand_points', name: 'Ngàn Điểm', emoji: '🏆', description: 'Đạt 1000 điểm', requirement: { type: 'points', value: 1000 } },
+];
+
+const POINTS_CONFIG = {
+  learn_word: 5,
+  show_meaning: 2,
+  correct_quiz: 10,
+  perfect_quiz_streak: 20,
+  pronounce_correct: 8,
+  favorite_word: 3,
+  lesson_complete: 15,
+  complete_daily_goal: 50,
+};
+
+function addPoints(action, multiplier = 1) {
+  const points = (POINTS_CONFIG[action] || 0) * multiplier;
+  userPoints += points;
+  
+  // Check if leveling up
+  const pointsForLevel = userLevel * 500;
+  if (userPoints >= pointsForLevel) {
+    userLevel++;
+    showNotification(`🎉 Lên cấp ${userLevel}!`);
+  }
+  
+  checkAchievements();
+  return points;
+}
+
+function checkAchievements() {
+  BADGES.forEach(badge => {
+    if (unlockedBadges.includes(badge.id)) return;
+    
+    let unlocked = false;
+    switch (badge.requirement.type) {
+      case 'learn':
+        if (Object.keys(wordStudyData).length >= badge.requirement.value) unlocked = true;
+        break;
+      case 'perfect_quiz':
+        const perfectStreak = parseInt(localStorage.getItem('perfectQuizStreak')) || 0;
+        if (perfectStreak >= badge.requirement.value) unlocked = true;
+        break;
+      case 'streak':
+        if (currentStreak >= badge.requirement.value) unlocked = true;
+        break;
+      case 'points':
+        if (userPoints >= badge.requirement.value) unlocked = true;
+        break;
+      case 'daily_goals':
+        const dailyGoalsClaimed = (localStorage.getItem('dailyGoalClaimed') || '').split(',').filter(d => d).length;
+        if (dailyGoalsClaimed >= badge.requirement.value) unlocked = true;
+        break;
+      case 'speed':
+        const lastQuizTime = parseInt(sessionStorage.getItem('lastQuizTime')) || 999;
+        if (lastQuizTime <= badge.requirement.value) unlocked = true;
+        break;
+      case 'flashcards':
+        const flashcardCount = Object.keys(wordStudyData).filter(k => wordStudyData[k].reviewCount > 0).length;
+        if (flashcardCount >= badge.requirement.value) unlocked = true;
+        break;
+    }
+    
+    if (unlocked) {
+      unlockedBadges.push(badge.id);
+      showNotification(`🎖️ Đã mở khóa: ${badge.name}!`);
+    }
+  });
+}
+
+function updateStreak() {
+  const today = new Date().toDateString();
+  if (lastActivityDate !== today) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (lastActivityDate === yesterday.toDateString()) {
+      currentStreak++;
+    } else {
+      currentStreak = 1;
+    }
+    lastActivityDate = today;
+    dailyProgress = 0; // Reset daily progress for new day
+  }
+  
+  // Update daily goal progress
+  if (enableDailyGoal) {
+    dailyProgress = (dailyProgress || 0) + 1;
+    
+    // Award bonus points for completing daily goal
+    if (dailyProgress >= dailyGoal && !document.querySelector('[data-daily-goal-claimed~="' + today + '"]')) {
+      const claimed = localStorage.getItem('dailyGoalClaimed') || [];
+      if (!claimed.includes(today)) {
+        addPoints('complete_daily_goal');
+        const newClaimed = claimed.length > 0 ? claimed + ',' + today : today;
+        localStorage.setItem('dailyGoalClaimed', newClaimed);
+        showNotification(`🎯 Hoàn thành mục tiêu hôm nay! +50 điểm`);
+      }
+    }
+  }
+}
+
+function getDailyGoalProgress() {
+  if (!enableDailyGoal) return null;
+  
+  const progress = dailyProgress || 0;
+  const goal = dailyGoal || 20;
+  const percentage = Math.round((progress / goal) * 100);
+  
+  return {
+    progress,
+    goal,
+    percentage: Math.min(percentage, 100),
+    completed: progress >= goal
+  };
+}
+
+function showNotification(message) {
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #10b981;
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-weight: 500;
+    animation: slideIn 0.3s ease-out;
+    z-index: 9999;
+  `;
+  notification.textContent = message;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.animation = 'slideOut 0.3s ease-out';
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
+}
+
+// ===== Dialogue AI =====
+let dialogueHistory = [];
+let selectedDialogueTopic = '';
+let dialogueRecognition = null;
+let isDialogueListening = false;
+let autoPlayAudio = false;
+let voiceLang = 'fr-FR';
+
+const dialogueResponses = {
+  greeting: [
+    { keywords: ['bonjour', 'salut', 'hello', 'hi'], response: 'Bonjour! Comment allez-vous aujourd\'hui? (Xin chào! Bạn khỏe không?)' },
+    { keywords: ['ça va', 'how are you'], response: 'Ça va bien, merci! Et vous? (Khỏe lắm, cảm ơn! Còn bạn thì sao?)' },
+    { keywords: ['au revoir', 'goodbye', 'bye'], response: 'Au revoir! À bientôt! (Tạm biệt! Hẹn gặp lại!)' },
+  ],
+  directions: [
+    { keywords: ['gare', 'hotel', 'where', 'ở đâu'], response: 'La gare est à droite, près d\'ici. (Nhà ga ở bên phải, gần đây.)' },
+    { keywords: ['rue', 'street', 'address'], response: 'Quelle adresse cherchez-vous? (Bạn tìm địa chỉ nào?)' },
+    { keywords: ['gauche', 'left', 'droite', 'right'], response: 'Allez tout droit! (Cứ đi thẳng!)' },
+  ],
+  introduction: [
+    { keywords: ['appelle', 'name', 'tên', 'who'], response: 'Je m\'appelle Claude! Enchanté! (Tôi tên là Claude! Rất vui được gặp!)' },
+    { keywords: ['profession', 'job', 'work'], response: 'Je suis un assistant d\'apprentissage. Et vous? (Tôi là một trợ lý học tập. Còn bạn?)' },
+    { keywords: ['vietnamien', 'vietnam'], response: 'Le Vietnam est un beau pays! Parlez-moi de votre ville! (Việt Nam là đất nước tuyệt đẹp! Hãy kể cho tôi về thành phố của bạn!)' },
+  ],
+  shopping: [
+    { keywords: ['coûte', 'price', 'cost', 'giá'], response: 'Combien voulez-vous payer? (Bạn muốn trả bao nhiêu?)' },
+    { keywords: ['vêtement', 'clothes', 'pantalon'], response: 'Ces vêtements sont très beaux! (Những quần áo này rất đẹp!)' },
+    { keywords: ['cher', 'expensive', 'cheap', 'rẻ'], response: 'Nous avons des réductions spéciales! (Chúng tôi có các ưu đãi đặc biệt!)' },
+  ],
+  food: [
+    { keywords: ['manger', 'eat', 'food', 'nourriture'], response: 'Que voulez-vous manger? (Bạn muốn ăn gì?)' },
+    { keywords: ['délicieux', 'delicious', 'bon', 'good'], response: 'Oui, c\'est très bon! (Đúng rồi, rất ngon!)' },
+    { keywords: ['restaurant', 'café', 'table'], response: 'Une table pour combien de personnes? (Một bàn cho bao nhiêu người?)' },
+  ],
+  travel: [
+    { keywords: ['voyage', 'travel', 'destination', 'ticket'], response: 'Quel est votre destination? (Điểm đến của bạn là đâu?)' },
+    { keywords: ['hôtel', 'hotel', 'chambre', 'room'], response: 'Quelle type de chambre préférez-vous? (Bạn thích loại phòng nào?)' },
+    { keywords: ['avement', 'passport', 'visa'], response: 'Avez-vous votre passeport? (Bạn có hộ chiếu không?)' },
+  ],
+  communication: [
+    { keywords: ['comprendre', 'understand', 'parler', 'speak'], response: 'Je suis ici pour vous aider! Parlez lentement, s\'il vous plaît! (Tôi ở đây để giúp bạn! Vui lòng nói chậm!)' },
+    { keywords: ['merci', 'thanks', 'thank you'], response: 'De rien! C\'est mon plaisir! (Không có gì! Rất vui được giúp!)' },
+    { keywords: ['excusez', 'sorry', 'pardon'], response: 'Pas de problème! (Không sao đâu!)' },
+  ],
+};
+
+function initDialogueUI() {
+  const dialogueMessagesDiv = document.getElementById('dialogueMessages');
+  const dialogueInput = document.getElementById('dialogueInput');
+  const dialogueSendBtn = document.getElementById('dialogueSendBtn');
+  const dialogueVoiceBtn = document.getElementById('dialogueVoiceBtn');
+  const dialogueTopicSelect = document.getElementById('dialogueTopicSelect');
+  const dialogueClearBtn = document.getElementById('dialogueClearBtn');
+  const voiceLangSelect = document.getElementById('voiceLangSelect');
+  const autoPlayCheckbox = document.getElementById('autoPlayAudio');
+
+  if (dialogueSendBtn) {
+    dialogueSendBtn.addEventListener('click', sendDialogueMessage);
+  }
+
+  if (dialogueInput) {
+    dialogueInput.addEventListener('keypress', event => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendDialogueMessage();
+      }
+    });
+  }
+
+  if (dialogueVoiceBtn) {
+    dialogueVoiceBtn.addEventListener('click', toggleDialogueVoiceInput);
+  }
+
+  if (dialogueTopicSelect) {
+    dialogueTopicSelect.addEventListener('change', event => {
+      selectedDialogueTopic = event.target.value;
+      saveState();
+    });
+  }
+
+  if (dialogueClearBtn) {
+    dialogueClearBtn.addEventListener('click', clearDialogue);
+  }
+
+  if (voiceLangSelect) {
+    voiceLangSelect.addEventListener('change', event => {
+      voiceLang = event.target.value;
+      if (dialogueRecognition) {
+        dialogueRecognition.lang = voiceLang;
+      }
+      saveState();
+    });
+  }
+
+  if (autoPlayCheckbox) {
+    autoPlayCheckbox.addEventListener('change', event => {
+      autoPlayAudio = event.checked;
+      saveState();
+    });
+    autoPlayCheckbox.checked = autoPlayAudio;
+  }
+
+  loadDialogueHistory();
+}
+
+function sendDialogueMessage() {
+  const dialogueInput = document.getElementById('dialogueInput');
+  const message = dialogueInput.value.trim();
+
+  if (!message) return;
+
+  // Add user message to history and UI
+  dialogueHistory.push({ sender: 'user', text: message });
+  addDialogueMessageToUI(message, 'user');
+
+  // Clear input
+  dialogueInput.value = '';
+  dialogueInput.focus();
+
+  // Generate AI response
+  setTimeout(() => {
+    const aiResponse = generateAIResponse(message);
+    dialogueHistory.push({ sender: 'ai', text: aiResponse });
+    addDialogueMessageToUI(aiResponse, 'ai');
+    
+    // Auto-play AI response if enabled
+    if (autoPlayAudio) {
+      playTTS(aiResponse, voiceLang);
+    }
+    
+    saveDialogueState();
+  }, 300);
+
+  saveState();
+}
+
+function generateAIResponse(userMessage) {
+  const lowerMessage = userMessage.toLowerCase();
+  const topicResponses = dialogueResponses[selectedDialogueTopic] || [];
+  const allResponses = selectedDialogueTopic ? topicResponses : Object.values(dialogueResponses).flat();
+
+  // Find matching response based on keywords
+  for (const item of allResponses) {
+    for (const keyword of item.keywords) {
+      if (lowerMessage.includes(keyword)) {
+        return item.response;
+      }
+    }
+  }
+
+  // Default responses
+  const defaultResponses = [
+    'C\'est intéressant! Pouvez-vous expliquer davantage? (Thật thú vị! Bạn có thể giải thích thêm không?)',
+    'Oui, je comprends. Continuons! (Vâng, tôi hiểu. Tiếp tục nào!)',
+    'C\'est une bonne question! (Đó là một câu hỏi hay!)',
+    'Pouvez-vous répéter, s\'il vous plaît? (Bạn có thể nhắc lại không?)',
+    'Amusant! Qu\'en pensez-vous? (Thật vui! Bạn nghĩ sao?)',
+  ];
+
+  return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+}
+
+function addDialogueMessageToUI(message, sender) {
+  const dialogueMessagesDiv = document.getElementById('dialogueMessages');
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `message ${sender}-message`;
+
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'message-content';
+  contentDiv.textContent = message;
+
+  messageDiv.appendChild(contentDiv);
+  
+  // Add voice button for AI messages
+  if (sender === 'ai') {
+    const actionsDiv = document.createElement('div');
+    actionsDiv.className = 'message-actions';
+    
+    const voiceBtn = document.createElement('button');
+    voiceBtn.className = 'message-actions button';
+    voiceBtn.textContent = '🔊 Phát âm';
+    voiceBtn.addEventListener('click', () => {
+      playTTS(message, voiceLang);
+    });
+    
+    actionsDiv.appendChild(voiceBtn);
+    messageDiv.appendChild(actionsDiv);
+  }
+  
+  dialogueMessagesDiv.appendChild(messageDiv);
+
+  // Auto scroll to bottom
+  dialogueMessagesDiv.scrollTop = dialogueMessagesDiv.scrollHeight;
+}
+
+function clearDialogue() {
+  if (confirm('Xoá tất cả cuộc trò chuyện? (Clear all conversation?)')) {
+    dialogueHistory = [];
+    const dialogueMessagesDiv = document.getElementById('dialogueMessages');
+    if (dialogueMessagesDiv) {
+      dialogueMessagesDiv.innerHTML = '<div class="message ai-message"><div class="message-content">Xin chào! Tôi là trợ lý học tiếng Pháp của bạn. Hãy nói chuyện với tôi bằng tiếng Pháp hoặc tiếng Anh, tôi sẽ giúp bạn cải thiện kỹ năng.</div></div>';
+    }
+    saveDialogueState();
+  }
+}
+
+function loadDialogueHistory() {
+  const saved = localStorage.getItem('dialogueHistory');
+  if (saved) {
+    try {
+      dialogueHistory = JSON.parse(saved);
+      const dialogueMessagesDiv = document.getElementById('dialogueMessages');
+      if (dialogueMessagesDiv) {
+        dialogueMessagesDiv.innerHTML = '';
+        for (const msg of dialogueHistory) {
+          addDialogueMessageToUI(msg.text, msg.sender);
+        }
+      }
+    } catch (e) {
+      console.error('Error loading dialogue history:', e);
+    }
+  }
+}
+
+function saveDialogueState() {
+  localStorage.setItem('dialogueHistory', JSON.stringify(dialogueHistory));
+}
+
+function createDialogueRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) return null;
+
+  const recognitionInstance = new SpeechRecognition();
+  recognitionInstance.lang = voiceLang;
+  recognitionInstance.interimResults = false;
+  recognitionInstance.maxAlternatives = 1;
+
+  recognitionInstance.onresult = event => {
+    const transcript = event.results[0][0].transcript;
+    const dialogueInput = document.getElementById('dialogueInput');
+    if (dialogueInput) {
+      dialogueInput.value = transcript;
+    }
+    updateVoiceStatus(`Nhận diện: "${transcript}"`);
+    stopDialogueVoiceInput();
+  };
+
+  recognitionInstance.onerror = event => {
+    let errorMsg = '';
+    switch (event.error) {
+      case 'not-allowed':
+      case 'permission-denied':
+        errorMsg = 'Yêu cầu cấp quyền micro';
+        break;
+      case 'no-speech':
+        errorMsg = 'Chưa nghe thấy tiếng nói, thử lại';
+        break;
+      case 'network':
+        errorMsg = 'Lỗi mạng, vui lòng kiểm tra kết nối';
+        break;
+      default:
+        errorMsg = `Lỗi: ${event.error}`;
+    }
+    updateVoiceStatus(`❌ ${errorMsg}`, 'error');
+    stopDialogueVoiceInput();
+  };
+
+  recognitionInstance.onend = () => {
+    if (isDialogueListening) {
+      stopDialogueVoiceInput();
+    }
+  };
+
+  return recognitionInstance;
+}
+
+function toggleDialogueVoiceInput() {
+  if (isDialogueListening) {
+    stopDialogueVoiceInput();
+  } else {
+    startDialogueVoiceInput();
+  }
+}
+
+function startDialogueVoiceInput() {
+  dialogueRecognition = createDialogueRecognition();
+  if (!dialogueRecognition) {
+    updateVoiceStatus('❌ Trình duyệt không hỗ trợ', 'error');
+    return;
+  }
+
+  isDialogueListening = true;
+  updateDialogueVoiceButton();
+  updateVoiceStatus('🎤 Đang lắng nghe...');
+  dialogueRecognition.start();
+}
+
+function stopDialogueVoiceInput() {
+  if (!dialogueRecognition) return;
+  isDialogueListening = false;
+  dialogueRecognition.stop();
+  updateDialogueVoiceButton();
+}
+
+function updateDialogueVoiceButton() {
+  const btn = document.getElementById('dialogueVoiceBtn');
+  if (btn) {
+    btn.classList.toggle('listening', isDialogueListening);
+    btn.textContent = isDialogueListening ? '⏹️' : '🎤';
+  }
+}
+
+function updateVoiceStatus(message, type = 'info') {
+  const statusEl = document.getElementById('voiceStatus');
+  if (statusEl) {
+    statusEl.textContent = message;
+    statusEl.className = `voice-status ${type}`;
+  }
+}
+
+function playTTS(text, lang = voiceLang) {
+  if (!autoPlayAudio) return;
+  if (!window.speechSynthesis) return;
+
+  window.speechSynthesis.cancel();
+  
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = lang;
+  utterance.rate = 0.9;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+
+  const voices = window.speechSynthesis.getVoices();
+  const langPrefix = lang.split('-')[0];
+  const matchingVoice = voices.find(v => v.lang.startsWith(langPrefix));
+  if (matchingVoice) {
+    utterance.voice = matchingVoice;
+  }
+
+  window.speechSynthesis.speak(utterance);
+}
+
+function saveState() {
+  const state = {
+    currentIndex,
+    currentExercise,
+    score,
+    completed,
+    flashcardIndex,
+    quizCompletedCount,
+    recentWords,
+    lessonSeen,
+    selectedLessonLevel,
+    selectedLessonTopic,
+    selectedQuizTopic,
+    selectedFlashcardTopic,
+    selectedVocabTopic,
+    searchQuery,
+    showFavorites,
+    favoriteWords,
+    selectedDialogueTopic,
+    autoPlayAudio,
+    voiceLang,
+    // Gamification
+    userPoints,
+    userLevel,
+    currentStreak,
+    lastActivityDate,
+    dailyGoal,
+    dailyProgress,
+    unlockedBadges,
+    enableSpacedRepetition,
+    enableDailyGoal,
+    showStreak,
+    showPoints,
+    compactMode,
+    wordStudyData,
+    dialogueHistory
+  };
+  localStorage.setItem("frenchAppState", JSON.stringify(state));
+}
+
 tabs.forEach(tab => {
   tab.addEventListener("click", () => selectTab(tab.dataset.tab));
 });
 
 showBtn.addEventListener("click", () => {
+  if (!meaningVisible) {
+    // Show meaning for first time - award points
+    const wordIndex = currentIndex;
+    const wordKey = `${words[wordIndex].fr}_${words[wordIndex].vi}`;
+    if (!wordStudyData[wordKey]?.showCount) {
+      addPoints('show_meaning');
+    }
+    if (!wordStudyData[wordKey]) {
+      wordStudyData[wordKey] = { showCount: 0, quizAttempts: 0, lastReview: null };
+    }
+    wordStudyData[wordKey].showCount = (wordStudyData[wordKey].showCount || 0) + 1;
+  }
   meaningVisible = !meaningVisible;
   updateWord();
 });
@@ -1706,9 +2361,372 @@ updateFavoriteToggle();
 if (searchInput) searchInput.value = searchQuery;
 if (topicFilterSelect) topicFilterSelect.value = selectedVocabTopic;
 
+initDialogueUI();
+
+// ===== Spaced Repetition System =====
+const SPACED_REPETITION_INTERVALS = {
+  0: 1,      // First review: 1 day
+  1: 3,      // Second review: 3 days
+  2: 7,      // Third review: 7 days
+  3: 30,     // Fourth review: 30 days
+  4: 90      // Fifth review: 90 days (final)
+};
+
+function getWordKey(wordIndex) {
+  const word = words[wordIndex];
+  return `${word.fr}_${word.vi}`;
+}
+
+function isWordDueForReview(wordIndex) {
+  if (!enableSpacedRepetition) return false;
+  
+  const wordKey = getWordKey(wordIndex);
+  const data = wordStudyData[wordKey];
+  
+  if (!data || !data.lastReview) return true; // New word
+  
+  const lastReviewTime = new Date(data.lastReview).getTime();
+  const now = new Date().getTime();
+  const daysSinceReview = (now - lastReviewTime) / (1000 * 60 * 60 * 24);
+  
+  const reviewStage = Math.min(data.reviewCount || 0, 4);
+  const nextReviewDays = SPACED_REPETITION_INTERVALS[reviewStage];
+  
+  return daysSinceReview >= nextReviewDays;
+}
+
+function getOverdueWords(wordIndexes) {
+  if (!enableSpacedRepetition) return [];
+  return wordIndexes.filter(idx => isWordDueForReview(idx));
+}
+
+function prioritizeWords(wordIndexes) {
+  if (!enableSpacedRepetition || wordIndexes.length === 0) return wordIndexes;
+  
+  const overdue = getOverdueWords(wordIndexes);
+  const regular = wordIndexes.filter(idx => !overdue.includes(idx));
+  
+  // Sort overdue words by days overdue (most overdue first)
+  overdue.sort((a, b) => {
+    const keyA = getWordKey(a);
+    const keyB = getWordKey(b);
+    const dataA = wordStudyData[keyA];
+    const dataB = wordStudyData[keyB];
+    
+    if (!dataA?.lastReview) return -1;
+    if (!dataB?.lastReview) return 1;
+    
+    const daysA = (new Date().getTime() - new Date(dataA.lastReview).getTime()) / (1000 * 60 * 60 * 24);
+    const daysB = (new Date().getTime() - new Date(dataB.lastReview).getTime()) / (1000 * 60 * 60 * 24);
+    
+    return daysB - daysA;
+  });
+  
+  return [...overdue, ...regular];
+}
+
+function updateWordReviewData(wordIndex, difficulty = 'normal') {
+  const wordKey = getWordKey(wordIndex);
+  
+  if (!wordStudyData[wordKey]) {
+    wordStudyData[wordKey] = {
+      showCount: 0,
+      quizAttempts: 0,
+      reviewCount: 0,
+      lastReview: null,
+      correctAttempts: 0,
+      totalAttempts: 0
+    };
+  }
+  
+  const data = wordStudyData[wordKey];
+  data.lastReview = new Date().toISOString();
+  data.reviewCount = (data.reviewCount || 0) + 1;
+  data.totalAttempts = (data.totalAttempts || 0) + 1;
+  
+  if (difficulty === 'correct') {
+    data.correctAttempts = (data.correctAttempts || 0) + 1;
+  }
+  
+  saveState();
+}
+
+function getSpacedRepetitionStats() {
+  if (!enableSpacedRepetition) return null;
+  
+  const now = new Date().getTime();
+  let totalWords = 0;
+  let reviewedWords = 0;
+  let dueForReview = 0;
+  
+  words.forEach((word, idx) => {
+    totalWords++;
+    const key = getWordKey(idx);
+    const data = wordStudyData[key];
+    
+    if (data?.lastReview) {
+      reviewedWords++;
+      if (isWordDueForReview(idx)) {
+        dueForReview++;
+      }
+    }
+  });
+  
+  return {
+    totalWords,
+    reviewedWords,
+    dueForReview,
+    masteredWords: reviewedWords - dueForReview
+  };
+}
+
+// ===== Achievements & Gamification Functions =====
+function renderAchievements() {
+  const levelProgress = Math.round((userPoints % (userLevel * 500)) / (userLevel * 500) * 100);
+  
+  document.getElementById('totalPoints').textContent = userPoints;
+  document.getElementById('currentStreak').textContent = showStreak ? currentStreak : '🔒';
+  document.getElementById('level').textContent = userLevel;
+  document.getElementById('levelProgress').textContent = levelProgress + '%';
+
+  // Add daily goal progress if enabled
+  const dailyGoalDiv = document.getElementById('dailyGoalProgress');
+  if (enableDailyGoal && dailyGoalDiv) {
+    const goalData = getDailyGoalProgress();
+    dailyGoalDiv.innerHTML = `
+      <div style="margin: 12px 0; padding: 12px; background: rgba(251, 176, 64, 0.1); border-radius: 6px;">
+        <strong>Mục tiêu hôm nay:</strong>
+        <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
+          <div style="flex: 1; background: #e0e0e0; height: 8px; border-radius: 4px; overflow: hidden;">
+            <div style="height: 100%; width: ${goalData.percentage}%; background: ${goalData.completed ? '#51cf66' : '#fbb040'}; transition: width 0.3s;"></div>
+          </div>
+          <span style="font-weight: bold; min-width: 60px;">${goalData.progress}/${goalData.goal}</span>
+        </div>
+        ${goalData.completed ? '<div style="color: #51cf66; font-size: 12px; margin-top: 6px;">✅ Mục tiêu đã hoàn thành!</div>' : ''}
+      </div>
+    `;
+  } else if (dailyGoalDiv) {
+    dailyGoalDiv.innerHTML = '';
+  }
+
+  const unlockedBadgesDiv = document.getElementById('unlockedBadges');
+  const lockedBadgesDiv = document.getElementById('lockedBadges');
+
+  unlockedBadgesDiv.innerHTML = '';
+  lockedBadgesDiv.innerHTML = '';
+
+  BADGES.forEach(badge => {
+    const badgeEl = document.createElement('div');
+    badgeEl.className = `badge ${unlockedBadges.includes(badge.id) ? '' : 'locked'}`;
+    badgeEl.innerHTML = `
+      <div class="badge-emoji">${badge.emoji}</div>
+      <div class="badge-name">${badge.name}</div>
+      <div class="badge-description">${badge.description}</div>
+    `;
+    badgeEl.title = badge.description;
+
+    if (unlockedBadges.includes(badge.id)) {
+      unlockedBadgesDiv.appendChild(badgeEl);
+    } else {
+      lockedBadgesDiv.appendChild(badgeEl);
+    }
+  });
+}
+
+function loadSettings() {
+  const enableSpacedRepetitionEl = document.getElementById('enableSpacedRepetition');
+  const enableDailyGoalEl = document.getElementById('enableDailyGoal');
+  const dailyGoalValueEl = document.getElementById('dailyGoalValue');
+  const showStreakEl = document.getElementById('showStreak');
+  const showPointsEl = document.getElementById('showPoints');
+  const compactModeEl = document.getElementById('compactMode');
+
+  if (enableSpacedRepetitionEl) enableSpacedRepetitionEl.checked = enableSpacedRepetition;
+  if (enableDailyGoalEl) enableDailyGoalEl.checked = enableDailyGoal;
+  if (dailyGoalValueEl) dailyGoalValueEl.value = dailyGoal;
+  if (showStreakEl) showStreakEl.checked = showStreak;
+  if (showPointsEl) showPointsEl.checked = showPoints;
+  if (compactModeEl) compactModeEl.checked = compactMode;
+}
+
+function initSettingsListeners() {
+  const enableSpacedRepetitionEl = document.getElementById('enableSpacedRepetition');
+  const enableDailyGoalEl = document.getElementById('enableDailyGoal');
+  const dailyGoalValueEl = document.getElementById('dailyGoalValue');
+  const showStreakEl = document.getElementById('showStreak');
+  const showPointsEl = document.getElementById('showPoints');
+  const compactModeEl = document.getElementById('compactMode');
+  const exportDataBtn = document.getElementById('exportDataBtn');
+  const importDataBtn = document.getElementById('importDataBtn');
+  const clearDataBtn = document.getElementById('clearDataBtn');
+  const importFile = document.getElementById('importFile');
+
+  if (enableSpacedRepetitionEl) {
+    enableSpacedRepetitionEl.addEventListener('change', (e) => {
+      enableSpacedRepetition = e.checked;
+      saveState();
+    });
+  }
+
+  if (enableDailyGoalEl) {
+    enableDailyGoalEl.addEventListener('change', (e) => {
+      enableDailyGoal = e.checked;
+      saveState();
+    });
+  }
+
+  if (dailyGoalValueEl) {
+    dailyGoalValueEl.addEventListener('change', (e) => {
+      dailyGoal = parseInt(e.target.value) || 20;
+      saveState();
+    });
+  }
+
+  if (showStreakEl) {
+    showStreakEl.addEventListener('change', (e) => {
+      showStreak = e.checked;
+      saveState();
+    });
+  }
+
+  if (showPointsEl) {
+    showPointsEl.addEventListener('change', (e) => {
+      showPoints = e.checked;
+      saveState();
+    });
+  }
+
+  if (compactModeEl) {
+    compactModeEl.addEventListener('change', (e) => {
+      compactMode = e.checked;
+      document.body.classList.toggle('compact', compactMode);
+      saveState();
+    });
+  }
+
+  if (exportDataBtn) {
+    exportDataBtn.addEventListener('click', exportData);
+  }
+
+  if (importDataBtn) {
+    importDataBtn.addEventListener('click', () => importFile.click());
+  }
+
+  if (importFile) {
+    importFile.addEventListener('change', importData);
+  }
+
+  if (clearDataBtn) {
+    clearDataBtn.addEventListener('click', () => {
+      if (confirm('Bạn chắc chắn muốn xoá toàn bộ dữ liệu không? Hành động này không thể hoàn tác.')) {
+        localStorage.clear();
+        location.reload();
+      }
+    });
+  }
+}
+
+function exportData() {
+  const data = {
+    words: words,
+    wordStudyData: wordStudyData,
+    userPoints: userPoints,
+    userLevel: userLevel,
+    currentStreak: currentStreak,
+    lastActivityDate: lastActivityDate,
+    dailyGoal: dailyGoal,
+    dailyProgress: dailyProgress,
+    unlockedBadges: unlockedBadges,
+    favoriteWords: favoriteWords,
+    recentWords: recentWords,
+    dialogueHistory: dialogueHistory,
+    // Settings
+    enableSpacedRepetition: enableSpacedRepetition,
+    enableDailyGoal: enableDailyGoal,
+    showStreak: showStreak,
+    showPoints: showPoints,
+    compactMode: compactMode,
+    exportDate: new Date().toLocaleString()
+  };
+
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `french-app-backup-${Date.now()}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+
+  showNotification('✅ Đã tải xuống dữ liệu thành công!');
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const data = JSON.parse(event.target.result);
+      
+      // Import all data with validation
+      if (data.wordStudyData) wordStudyData = data.wordStudyData;
+      if (data.userPoints !== undefined) userPoints = data.userPoints;
+      if (data.userLevel !== undefined) userLevel = data.userLevel;
+      if (data.currentStreak !== undefined) currentStreak = data.currentStreak;
+      if (data.lastActivityDate) lastActivityDate = data.lastActivityDate;
+      if (data.dailyGoal) dailyGoal = data.dailyGoal;
+      if (data.dailyProgress !== undefined) dailyProgress = data.dailyProgress;
+      if (data.unlockedBadges) unlockedBadges = data.unlockedBadges;
+      if (data.favoriteWords) favoriteWords = data.favoriteWords;
+      if (data.recentWords) recentWords = data.recentWords;
+      if (data.dialogueHistory) dialogueHistory = data.dialogueHistory;
+      if (data.enableSpacedRepetition !== undefined) enableSpacedRepetition = data.enableSpacedRepetition;
+      if (data.enableDailyGoal !== undefined) enableDailyGoal = data.enableDailyGoal;
+      if (data.showStreak !== undefined) showStreak = data.showStreak;
+      if (data.showPoints !== undefined) showPoints = data.showPoints;
+      if (data.compactMode !== undefined) compactMode = data.compactMode;
+
+      saveState();
+      showNotification('✅ Dữ liệu đã được khôi phục thành công!');
+      renderAchievements();
+      renderProgress();
+      loadSettings();
+      setTimeout(() => location.reload(), 1500);
+    } catch (error) {
+      showNotification('❌ Lỗi: Tệp không hợp lệ');
+      console.error(error);
+    }
+  };
+  reader.readAsText(file);
+}
+
 renderLessons();
 renderExercise();
 updateWord();
 renderChips();
 renderProgress();
+initSettingsListeners();
+
+// Check for overdue words and show reminder
+function checkAndShowReminders() {
+  if (enableSpacedRepetition) {
+    const srStats = getSpacedRepetitionStats();
+    if (srStats && srStats.dueForReview > 0) {
+      setTimeout(() => {
+        showNotification(`⏰ Có ${srStats.dueForReview} từ cần ôn tập!`);
+      }, 1000);
+    }
+  }
+  
+  const goalData = getDailyGoalProgress();
+  if (goalData && !goalData.completed) {
+    setTimeout(() => {
+      showNotification(`🎯 ${goalData.goal - goalData.progress} từ nữa để hoàn thành mục tiêu!`);
+    }, 2500);
+  }
+}
+
+checkAndShowReminders();
 selectTab("vocab");
