@@ -22,7 +22,10 @@
       <button class="tab" data-tab="lesson">Bài học</button>
       <button class="tab" data-tab="exercise">Bài tập</button>
       <button class="tab" data-tab="flashcard">Flashcard</button>
+      <button class="tab" data-tab="dialogue">Đối thoại AI</button>
       <button class="tab" data-tab="progress">Tiến độ</button>
+      <button class="tab" data-tab="achievements">Huy hiệu 🏆</button>
+      <button class="tab" data-tab="settings">Cài đặt ⚙️</button>
     </div>
 
     <section class="card" id="vocabSection">
@@ -123,6 +126,51 @@
       </div>
     </section>
 
+    <section class="dialogue-section hidden" id="dialogueSection">
+      <h2>Đối thoại với AI</h2>
+      <div class="dialogue-container">
+        <div class="dialogue-messages" id="dialogueMessages">
+          <div class="message ai-message">
+            <div class="message-content">Xin chào! Tôi là trợ lý học tiếng Pháp của bạn. Hãy nói chuyện với tôi bằng tiếng Pháp hoặc tiếng Anh, tôi sẽ giúp bạn cải thiện kỹ năng.</div>
+          </div>
+        </div>
+        <div class="dialogue-input-area">
+          <input type="text" id="dialogueInput" placeholder="Nhập tin nhắn..." class="dialogue-input">
+          <button id="dialogueVoiceBtn" class="button secondary" title="Nhấp để nói">🎤</button>
+          <button id="dialogueSendBtn" class="button primary">Gửi</button>
+        </div>
+        <div class="dialogue-info">
+          <small id="dialogueStatus">Sẵn sàng để chat</small>
+          <small id="voiceStatus" class="voice-status"></small>
+        </div>
+      </div>
+      <div class="dialogue-settings">
+        <label for="dialogueTopicSelect">Chọn chủ đề:</label>
+        <select id="dialogueTopicSelect">
+          <option value="">Tất cả</option>
+          <option value="greeting">Chào hỏi</option>
+          <option value="directions">Hỏi đường</option>
+          <option value="introduction">Giới thiệu</option>
+          <option value="shopping">Mua sắm</option>
+          <option value="food">Ăn uống</option>
+          <option value="travel">Du lịch</option>
+          <option value="communication">Giao tiếp</option>
+        </select>
+        <div class="voice-controls">
+          <label for="voiceLangSelect">Ngôn ngữ:</label>
+          <select id="voiceLangSelect">
+            <option value="en-US">English</option>
+            <option value="fr-FR">Français</option>
+            <option value="vi-VN">Tiếng Việt</option>
+          </select>
+          <label>
+            <input type="checkbox" id="autoPlayAudio"> Phát âm tự động
+          </label>
+        </div>
+        <button id="dialogueClearBtn" class="button secondary">Xoá cuộc trò chuyện</button>
+      </div>
+    </section>
+
     <section class="progress-section hidden" id="progressSection">
       <h2>Tổng quan học tập</h2>
       <div class="progress-card">
@@ -134,9 +182,87 @@
           <h3>Đã học gần đây</h3>
           <ul id="recentList"></ul>
         </div>
+        <div id="spacedRepetitionStats"></div>
       </div>
       <div class="controls" style="margin-top: 0;">
         <button id="resetProgressBtn" class="button secondary">Đặt lại lộ trình</button>
+      </div>
+    </section>
+
+    <section class="achievements-section hidden" id="achievementsSection">
+      <h2>Huy hiệu & Thành tích 🏆</h2>
+      <div class="achievements-container">
+        <div class="stats-mini">
+          <div class="stat-box">
+            <div class="stat-number" id="totalPoints">0</div>
+            <div class="stat-label">Điểm</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number" id="currentStreak">0</div>
+            <div class="stat-label">Chuỗi ngày</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number" id="level">1</div>
+            <div class="stat-label">Cấp độ</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number" id="levelProgress">0</div>
+            <div class="stat-label">% Cấp độ</div>
+          </div>
+        </div>
+
+        <div id="dailyGoalProgress"></div>
+
+        <div class="achievements-grid">
+          <h3>Những Huy Hiệu Đã Mở Khóa</h3>
+          <div class="badges-list" id="unlockedBadges"></div>
+        </div>
+
+        <div class="achievements-grid">
+          <h3>Những Huy Hiệu Sắp Tới</h3>
+          <div class="badges-list" id="lockedBadges"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="settings-section hidden" id="settingsSection">
+      <h2>Cài đặt ⚙️</h2>
+      <div class="settings-container">
+        <div class="settings-group">
+          <h3>Cài đặt Học Tập</h3>
+          <label>
+            <input type="checkbox" id="enableSpacedRepetition" checked> Kích hoạt Spaced Repetition
+          </label>
+          <label>
+            <input type="checkbox" id="enableDailyGoal" checked> Kích hoạt Mục tiêu Hàng ngày
+          </label>
+          <label>
+            <span>Mục tiêu hàng ngày:</span>
+            <input type="number" id="dailyGoalValue" min="5" max="500" value="20" style="width: 80px;">
+            <span>từ</span>
+          </label>
+        </div>
+
+        <div class="settings-group">
+          <h3>Cài đặt Hiển Thị</h3>
+          <label>
+            <input type="checkbox" id="showStreak" checked> Hiển thị Chuỗi ngày
+          </label>
+          <label>
+            <input type="checkbox" id="showPoints" checked> Hiển thị Điểm
+          </label>
+          <label>
+            <input type="checkbox" id="compactMode"> Chế độ Compact
+          </label>
+        </div>
+
+        <div class="settings-group">
+          <h3>Dữ Liệu</h3>
+          <button id="exportDataBtn" class="button secondary">📥 Tải xuống Dữ liệu</button>
+          <button id="importDataBtn" class="button secondary">📤 Tải lên Dữ liệu</button>
+          <button id="clearDataBtn" class="button secondary">🗑️ Xoá Tất cả Dữ liệu</button>
+          <input type="file" id="importFile" accept=".json" style="display: none;">
+        </div>
       </div>
     </section>
   </main>
