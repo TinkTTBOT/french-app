@@ -153,6 +153,10 @@
         <div class="search-bar">
           <input id="grammarSearch" type="search" placeholder="Tìm ngữ pháp..." />
         </div>
+        <div class="levels-row" id="grammarLevelButtons"></div>
+        <div class="topics-row" id="grammarTagButtons"></div>
+        <div class="levels-row" id="grammarStatusButtons"></div>
+        <p id="grammarProgress" class="vocab-result-summary">Đã học 0/0 bài ngữ pháp.</p>
         <div class="card-grid" id="grammarList"></div>
       </section>
 
@@ -258,6 +262,14 @@
           </div>
           <button id="startQuiz" class="pill">Bắt đầu quiz</button>
         </div>
+
+        <div class="practice-tabs">
+          <button id="quizModeVocab" class="pill practice-tab active" data-quiz-mode="vocab">Từ vựng</button>
+          <button id="quizModeGrammar" class="pill practice-tab" data-quiz-mode="grammar">Ngữ pháp</button>
+        </div>
+        <p id="quizFilterSummary" class="vocab-result-summary">Chọn cấp độ và chủ đề để bắt đầu.</p>
+        <div class="levels-row" id="quizLevelButtons"></div>
+        <div class="topics-row" id="quizTopicButtons"></div>
 
         <article class="card quiz-card">
           <div id="quizContainer">
