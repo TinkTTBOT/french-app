@@ -10,6 +10,10 @@ const flashcardWord = document.getElementById('flashcardWord');
 const flashcardDefinition = document.getElementById('flashcardDefinition');
 const vocabList = document.getElementById('vocabList');
 const grammarList = document.getElementById('grammarList');
+const grammarProgress = document.getElementById('grammarProgress');
+const grammarLevelButtons = document.getElementById('grammarLevelButtons');
+const grammarTagButtons = document.getElementById('grammarTagButtons');
+const grammarStatusButtons = document.getElementById('grammarStatusButtons');
 const vocabSearch = document.getElementById('vocabSearch');
 const grammarSearch = document.getElementById('grammarSearch');
 const clearSearch = document.getElementById('clearSearch');
@@ -24,6 +28,11 @@ const quizQuestion = document.getElementById('quizQuestion');
 const quizAnswers = document.getElementById('quizAnswers');
 const quizStatus = document.getElementById('quizStatus');
 const nextQuestion = document.getElementById('nextQuestion');
+const quizFilterSummary = document.getElementById('quizFilterSummary');
+const quizLevelButtons = document.getElementById('quizLevelButtons');
+const quizTopicButtons = document.getElementById('quizTopicButtons');
+const quizModeVocab = document.getElementById('quizModeVocab');
+const quizModeGrammar = document.getElementById('quizModeGrammar');
 const themeToggle = document.getElementById('themeToggle');
 const themeToggleBottom = document.getElementById('themeToggleBottom');
 const newFlashcard = document.getElementById('newFlashcard');
@@ -145,10 +154,473 @@ function generateBulkVocabularies(count = 3000) {
 const vocabularies = [...baseVocabularies, ...generateBulkVocabularies(3000)];
 
 const grammarLessons = [
-  { title: 'Les articles', text: 'Trong tiếng Pháp có các mạo từ xác định (le, la, les) và không xác định (un, une, des).' },
-  { title: 'Động từ être', text: 'Être = là, được. Je suis, tu es, il/elle est, nous sommes, vous êtes, ils/elles sont.' },
-  { title: 'Giới từ nơi chốn', text: 'À = ở, chez = tại nhà, dans = trong, sur = trên.' },
-  { title: 'Giới từ chỉ thời gian', text: 'En + tháng, pendant + khoảng thời gian, il y a + trước.' }
+  // A1 – nền tảng
+  {
+    id: 'articles',
+    title: 'Mạo từ (Les articles)',
+    summary: 'Phân biệt mạo từ xác định và không xác định.',
+    details: 'Xác định: le/la/les. Không xác định: un/une/des. Dùng mạo từ đúng giúp câu tự nhiên như người bản xứ.',
+    example: 'Je veux un café. / La maison est grande.'
+  },
+  {
+    id: 'etre',
+    title: 'Động từ “être”',
+    summary: '“Être” = “là/ở”. Động từ bất quy tắc quan trọng.',
+    details: 'Hiện tại: je suis, tu es, il/elle est, nous sommes, vous êtes, ils/elles sont.',
+    example: 'Je suis étudiant. / Nous sommes à Paris.'
+  },
+  {
+    id: 'avoir',
+    title: 'Động từ “avoir”',
+    summary: '“Avoir” = “có”. Dùng phổ biến và là trợ động từ.',
+    details: 'Hiện tại: j’ai, tu as, il/elle a, nous avons, vous avez, ils/elles ont.',
+    example: 'J’ai 20 ans. / Tu as un livre ?'
+  },
+  {
+    id: 'subject-pronouns',
+    title: 'Đại từ nhân xưng (chủ ngữ)',
+    summary: 'Je, tu, il/elle/on, nous, vous, ils/elles.',
+    details: '“On” thường dùng thay “nous” trong khẩu ngữ. “Vous” vừa là số nhiều vừa là lịch sự.',
+    example: 'On va au cinéma ? / Vous êtes prêt(e) ?'
+  },
+  {
+    id: 'present-er',
+    title: 'Hiện tại của động từ -er',
+    summary: 'Nhóm động từ phổ biến nhất.',
+    details: 'Bỏ -er, thêm: -e, -es, -e, -ons, -ez, -ent.',
+    example: 'parler → je parle, tu parles, il parle, nous parlons, vous parlez, ils parlent.'
+  },
+  {
+    id: 'present-ir',
+    title: 'Hiện tại của động từ -ir (type finir)',
+    summary: 'Một nhóm -ir thông dụng có “-iss-” ở nous/vous/ils.',
+    details: 'Bỏ -ir, thêm: -is, -is, -it, -issons, -issez, -issent.',
+    example: 'finir → je finis, nous finissons, ils finissent.'
+  },
+  {
+    id: 'present-re',
+    title: 'Hiện tại của động từ -re (type vendre)',
+    summary: 'Nhóm -re thường gặp trong A1–A2.',
+    details: 'Bỏ -re, thêm: -s, -s, (rien), -ons, -ez, -ent.',
+    example: 'vendre → je vends, tu vends, il vend, nous vendons, vous vendez, ils vendent.'
+  },
+  {
+    id: 'present-ir2',
+    title: 'Một số -ir bất quy tắc (type partir)',
+    summary: 'Không theo “-iss-” như finir.',
+    details: 'Ví dụ partir: je pars, tu pars, il part, nous partons, vous partez, ils partent.',
+    example: 'Je pars maintenant. / Nous partons demain.'
+  },
+  {
+    id: 'negation',
+    title: 'Phủ định (ne…pas)',
+    summary: 'Phủ định cơ bản nhất.',
+    details: 'Đặt “ne” trước động từ và “pas” sau động từ. Khẩu ngữ đôi khi lược “ne”.',
+    example: 'Je ne parle pas anglais. / J’aime pas ça. (khẩu ngữ)'
+  },
+  {
+    id: 'negation-advanced',
+    title: 'Phủ định mở rộng (jamais/rien/plus/personne)',
+    summary: 'Các từ phủ định thường gặp.',
+    details: 'ne…jamais (không bao giờ), ne…rien (không gì), ne…plus (không còn), ne…personne (không ai).',
+    example: 'Je ne veux plus de café. / Je n’ai rien compris.'
+  },
+  {
+    id: 'questions',
+    title: 'Câu hỏi cơ bản',
+    summary: '3 cách hỏi thông dụng.',
+    details: '1) Lên giọng: Tu viens ? 2) Est-ce que: Est-ce que tu viens ? 3) Đảo ngữ: Viens-tu ?',
+    example: 'Est-ce que vous avez réservé ?'
+  },
+  {
+    id: 'question-words',
+    title: 'Từ để hỏi (qui/que/quoi/où/quand/comment/pourquoi/combien)',
+    summary: 'Bộ từ hỏi cốt lõi.',
+    details: 'Kết hợp với “est-ce que” hoặc đặt đầu câu. “Qu’est-ce que … ?” = “cái gì…?”.',
+    example: 'Où est la gare ? / Qu’est-ce que tu fais ?'
+  },
+  {
+    id: 'adjectives',
+    title: 'Tính từ & hòa hợp giống/số',
+    summary: 'Tính từ thường đổi theo danh từ.',
+    details: 'Thường: giống cái +e, số nhiều +s (có ngoại lệ). Một số tính từ đứng trước danh từ (beau, grand, petit…).',
+    example: 'un livre intéressant / une idée intéressante / des idées intéressantes'
+  },
+  {
+    id: 'adjectives-position',
+    title: 'Vị trí tính từ (trước/sau danh từ)',
+    summary: 'Không phải tính từ nào cũng đứng sau.',
+    details: 'Nhóm hay đứng trước: beau, bon, grand, gros, jeune, joli, mauvais, nouveau, petit, vieux… (BBAGG+).',
+    example: 'une jolie maison / une maison moderne'
+  },
+  {
+    id: 'comparatives',
+    title: 'So sánh hơn (plus/moins/aussi … que)',
+    summary: 'So sánh tính từ/trạng từ/danh từ.',
+    details: 'tính từ: plus grand que…; trạng từ: plus vite que…; danh từ: plus de … que / moins de … que.',
+    example: 'Il est plus grand que moi. / Je travaille plus que toi.'
+  },
+  {
+    id: 'superlatives',
+    title: 'So sánh nhất (le/la/les plus…)',
+    summary: '“Nhất” dùng với mạo từ xác định.',
+    details: 'le plus + adj; la plus + adj; les plus + adj.',
+    example: 'C’est le meilleur restaurant de la ville.'
+  },
+  {
+    id: 'possessive',
+    title: 'Tính từ sở hữu (mon/ma/mes…)',
+    summary: 'Diễn tả “của tôi/của bạn/…”',
+    details: 'Chọn theo giống/số của danh từ sở hữu (không theo người sở hữu). “ma + âm đầu nguyên âm” → “mon amie”.',
+    example: 'mon frère / ma sœur / mes amis'
+  },
+  {
+    id: 'demonstratives',
+    title: 'Tính từ chỉ định (ce/cet/cette/ces)',
+    summary: 'Diễn tả “này/đó”.',
+    details: 'ce (đực), cet (đực + nguyên âm), cette (cái), ces (số nhiều).',
+    example: 'ce livre / cet homme / cette table / ces enfants'
+  },
+  {
+    id: 'articles-contraction',
+    title: 'Co rút mạo từ + giới từ (à/de + le/les)',
+    summary: 'Quy tắc bắt buộc.',
+    details: 'à + le = au; à + les = aux; de + le = du; de + les = des.',
+    example: 'Je vais au marché. / Je reviens des États-Unis.'
+  },
+  {
+    id: 'prepositions-place',
+    title: 'Giới từ nơi chốn (à/chez/dans/sur…)',
+    summary: 'Các giới từ cơ bản.',
+    details: 'à = ở/đến; chez = nhà/tiệm của ai; dans = trong; sur = trên; sous = dưới; devant/derrière = trước/sau.',
+    example: 'Je suis chez moi. / Le livre est sur la table.'
+  },
+  {
+    id: 'countries-preps',
+    title: 'Giới từ với quốc gia/thành phố (à/en/au/aux)',
+    summary: 'Quy tắc theo giống của quốc gia.',
+    details: 'Thành phố: à Paris. Quốc gia: en + giống cái (en France), au + giống đực (au Canada), aux + số nhiều (aux États-Unis).',
+    example: 'Je vais en France. / Il habite au Japon.'
+  },
+  {
+    id: 'time-expressions',
+    title: 'Thời gian cơ bản (en/pendant/il y a/depuis)',
+    summary: '4 cấu trúc rất hay gặp.',
+    details: 'en + tháng/năm; pendant + khoảng thời gian; il y a + mốc thời gian (… trước); depuis + mốc bắt đầu (từ…).',
+    example: 'J’étudie le français depuis 2024. / Je suis arrivé il y a deux jours.'
+  },
+  {
+    id: 'partitive',
+    title: 'Mạo từ bộ phận (du/de la/des)',
+    summary: 'Nói “một ít/một phần”.',
+    details: 'du (đực), de la (cái), des (số nhiều). Khi phủ định thường chuyển thành de/d’.',
+    example: 'Je veux du pain. / Je ne veux pas de sucre.'
+  },
+  {
+    id: 'imperative',
+    title: 'Mệnh lệnh (Impératif)',
+    summary: 'Ra lệnh/đề nghị.',
+    details: 'Dạng thường dùng: tu/nous/vous. Với “-er”, dạng tu bỏ -s: Parle ! (nhưng: Parles-en !).',
+    example: 'Venez ici ! / Allons-y ! / Parle plus lentement.'
+  },
+  {
+    id: 'reflexive',
+    title: 'Động từ phản thân (se lever, s’appeler…) ',
+    summary: 'Diễn tả hành động hướng về bản thân.',
+    details: 'Đại từ: me/te/se/nous/vous/se + động từ. Quá khứ dùng “être” và hòa hợp (thường).',
+    example: 'Je m’appelle Nam. / Elle s’est levée tôt.'
+  },
+  {
+    id: 'pronouns-stressed',
+    title: 'Đại từ nhấn mạnh (moi/toi/lui/elle/nous/vous/eux/elles)',
+    summary: 'Dùng để nhấn mạnh hoặc sau giới từ.',
+    details: 'Sau giới từ: avec moi, pour lui…; dùng trong cấu trúc “c’est …”.',
+    example: 'C’est pour toi. / Avec eux, c’est facile.'
+  },
+  {
+    id: 'passe-compose',
+    title: 'Quá khứ (Passé composé)',
+    summary: 'Diễn tả hành động đã xảy ra và hoàn tất.',
+    details: 'Trợ động từ avoir/être + participe passé. Thường: đa số dùng avoir; một nhóm dùng être (aller/venir/entrer/sortir/arriver/partir/naître/mourir/monter/descendre/rester/tomber…).',
+    example: 'J’ai étudié hier. / Elle est allée au marché.'
+  },
+  {
+    id: 'past-participle-agreement',
+    title: 'Hòa hợp quá khứ phân từ (accord du participe passé)',
+    summary: 'Quy tắc quan trọng từ A2–B1.',
+    details: 'Với être: hòa hợp với chủ ngữ. Với avoir: chỉ hòa hợp khi tân ngữ trực tiếp đứng trước (les pommes que j’ai mangées…).',
+    example: 'Elle est arrivée. / Les lettres que j’ai écrites.'
+  },
+  {
+    id: 'imparfait',
+    title: 'Quá khứ tiếp diễn (Imparfait)',
+    summary: 'Mô tả bối cảnh, thói quen trong quá khứ.',
+    details: 'Lấy gốc “nous” hiện tại bỏ -ons rồi thêm: -ais, -ais, -ait, -ions, -iez, -aient. Ngoại lệ: être → ét-.',
+    example: 'Quand j’étais petit, je jouais dehors.'
+  },
+  {
+    id: 'passe-compose-vs-imparfait',
+    title: 'So sánh Passé composé vs Imparfait',
+    summary: 'Chọn đúng thì giúp câu “đúng cảm giác”.',
+    details: 'Imparfait = bối cảnh/đang diễn ra; Passé composé = hành động điểm/đột ngột/hoàn tất.',
+    example: 'Je lisais quand il a téléphoné.'
+  },
+  {
+    id: 'plus-que-parfait',
+    title: 'Quá khứ trước quá khứ (Plus-que-parfait)',
+    summary: 'Hành động xảy ra trước một mốc quá khứ khác.',
+    details: 'Imparfait của avoir/être + participe passé.',
+    example: 'J’avais déjà mangé quand il est arrivé.'
+  },
+  {
+    id: 'futur-proche',
+    title: 'Tương lai gần (Futur proche)',
+    summary: 'Việc sắp xảy ra.',
+    details: 'aller (hiện tại) + động từ nguyên mẫu.',
+    example: 'Je vais partir demain.'
+  },
+  {
+    id: 'futur-simple',
+    title: 'Tương lai đơn (Futur simple)',
+    summary: 'Nói dự định/tiên đoán tương lai.',
+    details: 'Thêm đuôi: -ai, -as, -a, -ons, -ez, -ont vào gốc tương lai (thường là infinitif; có bất quy tắc: être/avoir/aller/faire/venir/pouvoir/vouloir/devoir…).',
+    example: 'Demain, je travaillerai. / Il fera beau.'
+  },
+  {
+    id: 'conditionnel-present',
+    title: 'Điều kiện hiện tại (Conditionnel présent)',
+    summary: 'Lịch sự, giả định, mong muốn.',
+    details: 'Gốc futur + đuôi imparfait (-ais, -ais, -ait, -ions, -iez, -aient).',
+    example: 'Je voudrais un café, s’il vous plaît.'
+  },
+  {
+    id: 'si-clauses',
+    title: 'Câu điều kiện với “si”',
+    summary: '3 mẫu phổ biến.',
+    details: '1) si + présent → futur/impératif. 2) si + imparfait → conditionnel. 3) si + plus-que-parfait → conditionnel passé.',
+    example: 'Si tu viens, on ira au cinéma. / Si j’avais le temps, je voyagerais.'
+  },
+  {
+    id: 'object-pronouns-direct',
+    title: 'Đại từ tân ngữ trực tiếp (me/te/le/la/nous/vous/les)',
+    summary: 'Thay thế “ai/cái gì” trực tiếp sau động từ.',
+    details: 'Đặt trước động từ chia. le/la rút gọn thành l’ trước nguyên âm.',
+    example: 'Je vois Marie → Je la vois. / Je prends le livre → Je le prends.'
+  },
+  {
+    id: 'object-pronouns-indirect',
+    title: 'Đại từ tân ngữ gián tiếp (lui/leur)',
+    summary: 'Thay thế “cho ai” (à + người).',
+    details: 'lui = cho anh ấy/cô ấy; leur = cho họ.',
+    example: 'Je parle à Paul → Je lui parle. / Je donne un cadeau à mes parents → Je leur donne un cadeau.'
+  },
+  {
+    id: 'pronoun-order',
+    title: 'Thứ tự đại từ trước động từ',
+    summary: 'Thứ tự cố định khi có nhiều đại từ.',
+    details: 'me/te/se/nous/vous → le/la/les → lui/leur → y → en.',
+    example: 'Je le lui donne. / J’en parle. / J’y vais.'
+  },
+  {
+    id: 'y-pronoun',
+    title: 'Đại từ “y”',
+    summary: 'Thay thế “à + nơi chốn/điều gì”.',
+    details: 'y thay cho “à Paris/à la maison/à ça…”.',
+    example: 'Tu vas à Paris ? Oui, j’y vais.'
+  },
+  {
+    id: 'en-pronoun',
+    title: 'Đại từ “en”',
+    summary: 'Thay thế “de + danh từ/đồ vật/số lượng”.',
+    details: 'en thường dùng với “du/de la/des”, “de + …”, số lượng: j’en ai deux.',
+    example: 'Tu veux du pain ? Oui, j’en veux.'
+  },
+  {
+    id: 'relative-qui-que',
+    title: 'Đại từ quan hệ: qui / que',
+    summary: 'Nối 2 câu lại.',
+    details: 'qui = chủ ngữ trong mệnh đề quan hệ; que = tân ngữ trực tiếp.',
+    example: 'La femme qui parle… / Le livre que j’achète…'
+  },
+  {
+    id: 'relative-dont-ou',
+    title: 'Đại từ quan hệ: dont / où',
+    summary: 'Mở rộng cho B1.',
+    details: 'dont thay cho “de + …”; où dùng cho nơi chốn/thời gian.',
+    example: 'La personne dont je parle… / La ville où je vis…'
+  },
+  {
+    id: 'adverbs',
+    title: 'Trạng từ (adverbes) & vị trí',
+    summary: 'Nói cách thức/thời gian/tần suất.',
+    details: 'Trạng từ thường đứng sau động từ hoặc cuối câu; với passé composé thường đứng giữa avoir/être và participe passé (souvent).',
+    example: 'Je travaille souvent. / J’ai souvent mangé ici.'
+  },
+  {
+    id: 'frequency',
+    title: 'Tần suất (toujours/souvent/parfois/rarement/jamais)',
+    summary: 'Các từ tần suất hay dùng.',
+    details: 'Thường đứng sau chủ ngữ hoặc sau trợ động từ.',
+    example: 'Je ne mange jamais ça.'
+  },
+  {
+    id: 'quantity',
+    title: 'Số lượng (beaucoup de/peu de/assez de/trop de)',
+    summary: 'Cụm chỉ lượng đi với “de”.',
+    details: 'Sau beaucoup/peu/assez/trop thường là “de/d’” (không dùng des).',
+    example: 'J’ai beaucoup de travail.'
+  },
+
+  // B1 – mở rộng cấu trúc
+  {
+    id: 'gerund',
+    title: 'Gérondif (en + participe présent)',
+    summary: 'Diễn tả “trong khi / bằng cách”.',
+    details: 'en + V-ant (nous-form bỏ -ons + ant). Dùng để diễn tả hành động song song hoặc cách thức.',
+    example: 'J’apprends en écoutant des podcasts.'
+  },
+  {
+    id: 'present-participle',
+    title: 'Participe présent (-ant)',
+    summary: 'Dùng như tính từ/trạng từ trong một số cấu trúc.',
+    details: 'Giống gérondif nhưng không có “en”. Có thể bổ nghĩa danh từ.',
+    example: 'Une fille souriant. (văn viết)'
+  },
+  {
+    id: 'passive-voice',
+    title: 'Câu bị động (voix passive)',
+    summary: 'Tập trung vào đối tượng bị tác động.',
+    details: 'être + participe passé (+ par). Participe passé hòa hợp theo chủ ngữ bị động.',
+    example: 'Le livre est écrit par Victor Hugo.'
+  },
+  {
+    id: 'indirect-speech',
+    title: 'Câu gián tiếp (discours indirect)',
+    summary: 'Tường thuật lời nói.',
+    details: 'Dire/penser/demander + que/si. Khi lùi thì (tùy bối cảnh) có thể đổi temps/repères.',
+    example: 'Il dit qu’il vient. / Elle demande si tu es libre.'
+  },
+  {
+    id: 'subjunctive-intro',
+    title: 'Subjonctif (giới thiệu)',
+    summary: 'Thì dùng sau cảm xúc/ý muốn/đánh giá.',
+    details: 'Sau: il faut que…, je veux que…, je suis content que…, bien que…, pour que… (mức B1–B2).',
+    example: 'Il faut que tu viennes. / Je veux que vous soyez là.'
+  },
+  {
+    id: 'subjunctive-forms',
+    title: 'Subjonctif (chia cơ bản)',
+    summary: 'Cách chia với động từ thường và bất quy tắc.',
+    details: 'Lấy gốc “ils” hiện tại bỏ -ent rồi thêm: -e, -es, -e, -ions, -iez, -ent. Bất quy tắc hay gặp: être (sois/soit…), avoir (aie/ait…), aller (aille…), faire (fasse…), pouvoir (puisse…), venir (vienne…).',
+    example: 'Il faut que je fasse attention.'
+  },
+  {
+    id: 'subjunctive-vs-indicative',
+    title: 'Subjonctif vs Indicatif',
+    summary: 'Khi nào dùng cái nào.',
+    details: 'Sự chắc chắn/sự thật → indicatif; mong muốn/cảm xúc/nghi ngờ → subjonctif.',
+    example: 'Je pense qu’il est là. / Je ne pense pas qu’il soit là.'
+  },
+  {
+    id: 'relative-which',
+    title: 'Đại từ quan hệ: lequel/laquelle/lesquels/lesquelles',
+    summary: 'Dùng sau giới từ (avec, dans, sur…).',
+    details: 'lequel biến đổi theo giống/số và kết hợp với à/de: auquel/auxquels/duquel…',
+    example: 'La table sur laquelle je travaille…'
+  },
+  {
+    id: 'cause-consequence',
+    title: 'Nguyên nhân – kết quả (parce que/car/donc/ainsi)',
+    summary: 'Liên từ và trạng từ liên kết.',
+    details: 'parce que (vì), car (vì – văn viết), donc (vì vậy), ainsi (do đó), puisque (vì – ai cũng biết).',
+    example: 'Je suis fatigué, donc je me repose.'
+  },
+  {
+    id: 'concession',
+    title: 'Nhượng bộ (mais/cependant/bien que/même si)',
+    summary: 'Diễn tả “mặc dù”.',
+    details: 'bien que + subjonctif; même si + indicatif.',
+    example: 'Bien qu’il pleuve, on sort. / Même s’il pleut, on sort.'
+  },
+  {
+    id: 'infinitive-constructions',
+    title: 'Cấu trúc với động từ nguyên mẫu',
+    summary: 'Muốn/định/biết cách…',
+    details: 'vouloir/pouvoir/devoir/aimer + infinitif. Attention: décider de / essayer de / commencer à …',
+    example: 'Je veux apprendre. / J’essaie de comprendre.'
+  },
+  {
+    id: 'near-past',
+    title: 'Quá khứ gần (venir de)',
+    summary: 'Việc vừa mới xảy ra.',
+    details: 'venir de + infinitif (venir chia theo thì).',
+    example: 'Je viens de finir. / Nous venons d’arriver.'
+  },
+  {
+    id: 'participles-adjective',
+    title: 'Participe passé như tính từ',
+    summary: 'Nhiều participe passé dùng như tính từ.',
+    details: 'Khi dùng như tính từ thì hòa hợp giống/số với danh từ.',
+    example: 'une porte fermée / des enfants fatigués'
+  },
+  {
+    id: 'reported-time',
+    title: 'Từ chỉ thời gian trong tường thuật',
+    summary: 'Hôm nay/hôm qua/ngày mai… khi kể lại.',
+    details: 'aujourd’hui → ce jour-là; demain → le lendemain; hier → la veille; maintenant → à ce moment-là…',
+    example: 'Il a dit qu’il viendrait le lendemain.'
+  },
+
+  // B2 – nâng cao, dùng nhiều trong viết/nói
+  {
+    id: 'conditionnel-passe',
+    title: 'Conditionnel passé',
+    summary: 'Giả định đã xảy ra trong quá khứ.',
+    details: 'avoir/être (conditionnel) + participe passé.',
+    example: 'J’aurais aimé venir. / Elle serait partie plus tôt.'
+  },
+  {
+    id: 'subjunctive-past',
+    title: 'Subjonctif passé (giới thiệu)',
+    summary: 'Hành động “đã” xảy ra trước mệnh đề chính.',
+    details: 'avoir/être (subjonctif) + participe passé.',
+    example: 'Je suis content que tu sois venu.'
+  },
+  {
+    id: 'causative-faire',
+    title: 'Cấu trúc “faire + infinitif” (khiến/nhờ)',
+    summary: 'Diễn tả “làm cho/nhờ ai làm”.',
+    details: 'faire + V. Người thực hiện hành động thường đi với “par” hoặc gián tiếp tùy câu.',
+    example: 'Je fais réparer ma voiture.'
+  },
+  {
+    id: 'double-negation',
+    title: 'Phủ định kép & sắc thái',
+    summary: 'Tinh chỉnh ý nghĩa phủ định.',
+    details: 'ne…ni…ni (không… cũng không), ne…que (chỉ), ne…aucun (không cái nào).',
+    example: 'Je n’ai ni faim ni soif. / Je ne veux aucun problème.'
+  },
+  {
+    id: 'ne-que',
+    title: '“Ne…que” (chỉ)',
+    summary: 'Thực chất là “chỉ” chứ không phải phủ định.',
+    details: 'ne…que đặt quanh động từ; phần “que” đứng trước thành phần “được giới hạn”.',
+    example: 'Je ne mange que des légumes.'
+  },
+  {
+    id: 'hypothesis',
+    title: 'Giả định & suy đoán (devoir/sembler/il paraît que)',
+    summary: 'Diễn tả suy đoán tự nhiên.',
+    details: 'Il doit être… (chắc là…); Il semble que…; Il paraît que…',
+    example: 'Il doit être tard.'
+  },
+  {
+    id: 'connectors',
+    title: 'Từ nối lập luận (d’ailleurs/en effet/toutefois/néanmoins)',
+    summary: 'Giúp bài viết mạch lạc.',
+    details: 'en effet (thật vậy), toutefois/néanmoins (tuy nhiên), d’ailleurs (hơn nữa/nhân tiện).',
+    example: 'Toutefois, il faut être prudent.'
+  }
 ];
 
 const practiceTasks = [
@@ -232,7 +704,7 @@ const dialogueTasks = [
   }
 ];
 
-const quizQuestions = [
+const baseQuizQuestions = [
   {
     question: '“Je suis” nghĩa là gì?',
     choices: ['Tôi là', 'Bạn là', 'Chúng tôi có', 'Họ làm'],
@@ -281,12 +753,22 @@ let activeListening = 0;
 let activeSpeaking = 0;
 let activePronunciation = 0;
 let activeDialogue = 0;
-let quizState = { current: 0, score: 0, total: 0, active: false };
+let quizState = { current: 0, score: 0, total: 0, active: false, questions: [] };
 let selectedLevel = 'all';
 let selectedTopic = 'all';
 let vocabTopics = ['all', ...new Set(vocabularies.map(item => item.topic))];
+let quizMode = 'vocab'; // vocab | grammar
+let quizVocabSelectedLevel = 'all';
+let quizVocabSelectedTopic = 'all';
+let quizGrammarSelectedLevel = 'all';
+let quizGrammarSelectedTopic = 'all'; // dùng tag như "chủ đề"
 let searchQuery = '';
 let grammarQuery = '';
+let grammarReadIds = [];
+let expandedGrammarId = null;
+let grammarSelectedLevel = 'all';
+let grammarSelectedTag = 'all';
+let grammarSelectedStatus = 'all'; // all | unread | read
 let favoriteWords = [];
 let activityHistoryList = [];
 let roadmapProgress = {};
@@ -308,6 +790,7 @@ let auth = null;
 let db = null;
 let currentUser = null;
 let authLoading = false;
+let uiPrefsLoaded = false;
 
 const firebaseConfig = {
   apiKey: 'AIzaSyB3ZaPfX8hjFLv-MFReKb3aF7HAOSla8iA',
@@ -340,16 +823,51 @@ function readStorage(key, fallback) {
   }
 }
 
+function loadUiPreferences() {
+  const prefs = readStorage('frenchCoachUiPrefs', null);
+  if (!prefs || typeof prefs !== 'object') return;
+  selectedLevel = prefs.selectedLevel || selectedLevel;
+  selectedTopic = prefs.selectedTopic || selectedTopic;
+  quizMode = prefs.quizMode || quizMode;
+  quizVocabSelectedLevel = prefs.quizVocabSelectedLevel || quizVocabSelectedLevel;
+  quizVocabSelectedTopic = prefs.quizVocabSelectedTopic || quizVocabSelectedTopic;
+  quizGrammarSelectedLevel = prefs.quizGrammarSelectedLevel || quizGrammarSelectedLevel;
+  quizGrammarSelectedTopic = prefs.quizGrammarSelectedTopic || quizGrammarSelectedTopic;
+  grammarSelectedLevel = prefs.grammarSelectedLevel || grammarSelectedLevel;
+  grammarSelectedTag = prefs.grammarSelectedTag || grammarSelectedTag;
+  grammarSelectedStatus = prefs.grammarSelectedStatus || grammarSelectedStatus;
+  onlyFavorites = typeof prefs.onlyFavorites === 'boolean' ? prefs.onlyFavorites : onlyFavorites;
+  uiPrefsLoaded = true;
+}
+
+function saveUiPreferences() {
+  localStorage.setItem('frenchCoachUiPrefs', JSON.stringify({
+    selectedLevel,
+    selectedTopic,
+    quizMode,
+    quizVocabSelectedLevel,
+    quizVocabSelectedTopic,
+    quizGrammarSelectedLevel,
+    quizGrammarSelectedTopic,
+    grammarSelectedLevel,
+    grammarSelectedTag,
+    grammarSelectedStatus,
+    onlyFavorites
+  }));
+  queueCloudSync();
+}
+
 function updateStats() {
   const stats = readStorage('frenchCoachStats', {
     wordsLearned: vocabularies.length,
-    grammarRead: grammarLessons.length,
+    grammarRead: 0,
     quizScore: 0,
     streak: 0,
     lastPractice: null
   });
   wordsLearned.textContent = stats.wordsLearned;
-  grammarRead.textContent = stats.grammarRead;
+  const grammarReadCount = Array.isArray(grammarReadIds) ? grammarReadIds.length : 0;
+  grammarRead.textContent = grammarReadCount;
   quizScore.textContent = stats.quizScore;
   favoriteCount.textContent = favoriteWords.length;
   streakCounter.textContent = `Chuỗi ngày: ${stats.streak}`;
@@ -359,7 +877,7 @@ function saveStats(overrides = {}) {
   const existing = readStorage('frenchCoachStats', {});
   localStorage.setItem('frenchCoachStats', JSON.stringify({
     wordsLearned: vocabularies.length,
-    grammarRead: grammarLessons.length,
+    grammarRead: Array.isArray(grammarReadIds) ? grammarReadIds.length : 0,
     quizScore: existing.quizScore || 0,
     streak: existing.streak || 0,
     lastPractice: existing.lastPractice || null,
@@ -397,6 +915,36 @@ function toggleFavoriteWord(word) {
 
 function loadHistory() {
   activityHistoryList = readStorage('frenchCoachHistory', []);
+}
+
+function loadGrammarRead() {
+  grammarReadIds = readStorage('frenchCoachGrammarRead', []);
+  if (!Array.isArray(grammarReadIds)) grammarReadIds = [];
+}
+
+function saveGrammarRead() {
+  localStorage.setItem('frenchCoachGrammarRead', JSON.stringify(grammarReadIds));
+  saveStats();
+  queueCloudSync();
+}
+
+function isGrammarRead(id) {
+  return Array.isArray(grammarReadIds) && grammarReadIds.includes(id);
+}
+
+function toggleGrammarRead(id) {
+  const lesson = grammarLessons.find(item => item.id === id);
+  if (!lesson) return;
+  if (isGrammarRead(id)) {
+    grammarReadIds = grammarReadIds.filter(item => item !== id);
+    recordActivity(`Bỏ đánh dấu ngữ pháp: ${lesson.title}`);
+  } else {
+    grammarReadIds.push(id);
+    recordActivity(`Đã học ngữ pháp: ${lesson.title}`);
+    maybeUpdateStreak();
+  }
+  saveGrammarRead();
+  renderGrammar();
 }
 
 function saveHistory() {
@@ -494,8 +1042,25 @@ function renderPractice() {
   practiceFeedback.textContent = '';
 }
 
+function isSpeechFeatureLikelyToWork() {
+  // SpeechRecognition thường cần Secure Context (HTTPS hoặc localhost/127.0.0.1)
+  const host = window.location && window.location.hostname;
+  const isLocal = host === 'localhost' || host === '127.0.0.1';
+  return Boolean(window.isSecureContext || isLocal);
+}
+
+function updateSpeechHints() {
+  if (!speakingInstructions) return;
+  if (!isSpeechFeatureLikelyToWork()) {
+    speakingInstructions.textContent = 'Lưu ý: Nhận diện giọng nói thường chỉ hoạt động trên HTTPS hoặc localhost/127.0.0.1. Nếu bạn mở bằng HTTP trên IP khác, hãy chuyển sang localhost hoặc dùng HTTPS.';
+    return;
+  }
+  speakingInstructions.textContent = 'Nhấn nút và nói theo câu tiếng Pháp.';
+}
+
 function renderSpeaking() {
   const task = speakingTasks[activeSpeaking];
+  updateSpeechHints();
   speakingPrompt.textContent = task.prompt;
   speakingRecognized.textContent = '';
   speakingFeedback.textContent = '';
@@ -608,18 +1173,152 @@ function renderTopicButtons() {
   `).join('');
 }
 
+function getGrammarLevelById(id) {
+  const a1 = new Set([
+    'articles', 'etre', 'avoir', 'subject-pronouns', 'present-er', 'negation', 'questions', 'question-words',
+    'adjectives', 'adjectives-position', 'possessive', 'demonstratives', 'articles-contraction', 'prepositions-place',
+    'countries-preps', 'time-expressions', 'partitive'
+  ]);
+  const a2 = new Set([
+    'present-ir', 'present-re', 'present-ir2', 'negation-advanced', 'comparatives', 'superlatives', 'imperative',
+    'reflexive', 'pronouns-stressed', 'passe-compose', 'near-past'
+  ]);
+  const b1 = new Set([
+    'past-participle-agreement', 'imparfait', 'passe-compose-vs-imparfait', 'plus-que-parfait', 'futur-simple',
+    'conditionnel-present', 'si-clauses', 'object-pronouns-direct', 'object-pronouns-indirect', 'pronoun-order',
+    'y-pronoun', 'en-pronoun', 'relative-qui-que', 'relative-dont-ou', 'adverbs', 'frequency', 'quantity',
+    'gerund', 'present-participle', 'passive-voice', 'indirect-speech', 'reported-time', 'participles-adjective',
+    'infinitive-constructions'
+  ]);
+  const b2 = new Set([
+    'subjunctive-intro', 'subjunctive-forms', 'subjunctive-vs-indicative', 'relative-which', 'cause-consequence',
+    'concession', 'connectors', 'conditionnel-passe', 'subjunctive-past', 'causative-faire', 'double-negation',
+    'ne-que', 'hypothesis'
+  ]);
+  if (b2.has(id)) return 'B2';
+  if (b1.has(id)) return 'B1';
+  if (a2.has(id)) return 'A2';
+  if (a1.has(id)) return 'A1';
+  return 'B1';
+}
+
+function inferGrammarTags(id) {
+  const tags = [];
+  if (/(present-|imperative|reflexive|causative|infinitive|near-past)/.test(id) || id === 'etre' || id === 'avoir') {
+    tags.push('Động từ');
+  }
+  if (/(passe|imparfait|futur|conditionnel|subjunctive|plus-que-parfait)/.test(id)) {
+    tags.push('Thì & thể');
+  }
+  if (/(pronoun|relative|y-pronoun|en-pronoun)/.test(id) || id === 'subject-pronouns') {
+    tags.push('Đại từ');
+  }
+  if (/(question|indirect-speech|passive-voice|si-clauses)/.test(id)) {
+    tags.push('Câu & cấu trúc');
+  }
+  if (/(articles|adjectives|comparatives|superlatives|possessive|demonstratives|partitive|quantity|ne-que|double-negation)/.test(id)) {
+    tags.push('Từ loại & lượng');
+  }
+  if (/(prepositions|countries-preps|time-expressions)/.test(id)) {
+    tags.push('Giới từ & thời gian');
+  }
+  if (/(connectors|cause-consequence|concession|reported-time)/.test(id)) {
+    tags.push('Liên kết & viết');
+  }
+  return tags.length ? tags : ['Khác'];
+}
+
+function getAllGrammarTags() {
+  const set = new Set();
+  grammarLessons.forEach(lesson => {
+    inferGrammarTags(lesson.id).forEach(tag => set.add(tag));
+  });
+  return ['all', ...Array.from(set)];
+}
+
+function renderGrammarFilters() {
+  if (!grammarLevelButtons || !grammarTagButtons || !grammarStatusButtons) return;
+
+  const levels = ['all', 'A1', 'A2', 'B1', 'B2'];
+  const tags = getAllGrammarTags();
+  const status = [
+    { id: 'all', label: 'Tất cả' },
+    { id: 'unread', label: 'Chưa học' },
+    { id: 'read', label: 'Đã học' }
+  ];
+
+  grammarLevelButtons.innerHTML = levels.map(level => `
+    <button class="pill grammar-level-button ${grammarSelectedLevel === level ? 'active' : ''}" data-grammar-level="${level}">
+      ${level === 'all' ? 'Tất cả cấp' : level}
+    </button>
+  `).join('');
+
+  grammarTagButtons.innerHTML = tags.map(tag => `
+    <button class="pill grammar-tag-button ${grammarSelectedTag === tag ? 'active' : ''}" data-grammar-tag="${tag}">
+      ${tag === 'all' ? 'Tất cả chủ điểm' : tag}
+    </button>
+  `).join('');
+
+  grammarStatusButtons.innerHTML = status.map(item => `
+    <button class="pill grammar-status-button ${grammarSelectedStatus === item.id ? 'active' : ''}" data-grammar-status="${item.id}">
+      ${item.label}
+    </button>
+  `).join('');
+}
+
 function renderGrammar() {
   const filtered = grammarLessons.filter(lesson => {
+    const level = getGrammarLevelById(lesson.id);
+    const tags = inferGrammarTags(lesson.id);
+    const isRead = isGrammarRead(lesson.id);
+
+    const matchLevel = grammarSelectedLevel === 'all' || level === grammarSelectedLevel;
+    const matchTag = grammarSelectedTag === 'all' || tags.includes(grammarSelectedTag);
+    const matchStatus = grammarSelectedStatus === 'all'
+      || (grammarSelectedStatus === 'read' && isRead)
+      || (grammarSelectedStatus === 'unread' && !isRead);
+
     const query = grammarQuery.trim().toLowerCase();
-    if (!query) return true;
-    return lesson.title.toLowerCase().includes(query) || lesson.text.toLowerCase().includes(query);
+    const matchQuery = !query || `${lesson.title} ${lesson.summary} ${lesson.details} ${lesson.example}`.toLowerCase().includes(query);
+
+    return matchLevel && matchTag && matchStatus && matchQuery;
   });
-  grammarList.innerHTML = filtered.length ? filtered.map(lesson => `
-    <article class="card grammar-card">
-      <h4>${lesson.title}</h4>
-      <p>${lesson.text}</p>
-    </article>
-  `).join('') : '<div class="card empty-state">Không tìm thấy chủ đề ngữ pháp phù hợp.</div>';
+  const total = grammarLessons.length;
+  const learned = Array.isArray(grammarReadIds) ? grammarReadIds.length : 0;
+  if (grammarProgress) {
+    grammarProgress.textContent = `Đã học ${learned}/${total} • Hiển thị ${filtered.length}/${total} bài.`;
+  }
+
+  grammarList.innerHTML = filtered.length ? filtered.map(lesson => {
+    const isRead = isGrammarRead(lesson.id);
+    const isExpanded = expandedGrammarId === lesson.id;
+    const level = getGrammarLevelById(lesson.id);
+    const tags = inferGrammarTags(lesson.id);
+    return `
+      <article class="card grammar-card ${isRead ? 'completed' : ''}">
+        <div class="grammar-card-top">
+          <h4>${lesson.title}</h4>
+          ${isRead ? '<span class="grammar-badge">Đã học</span>' : ''}
+        </div>
+        <p>${lesson.summary}</p>
+        <p class="grammar-meta">${level} • ${tags.join(' • ')}</p>
+        ${isExpanded ? `
+          <div class="grammar-details">
+            <p>${lesson.details}</p>
+            <p><strong>Ví dụ:</strong> ${lesson.example}</p>
+          </div>
+        ` : ''}
+        <div class="grammar-card-actions">
+          <button class="pill secondary grammar-toggle" data-grammar-toggle="${lesson.id}">
+            ${isExpanded ? 'Thu gọn' : 'Xem thêm'}
+          </button>
+          <button class="pill grammar-mark ${isRead ? 'secondary' : ''}" data-grammar="${lesson.id}">
+            ${isRead ? 'Đã học' : 'Đánh dấu đã học'}
+          </button>
+        </div>
+      </article>
+    `;
+  }).join('') : '<div class="card empty-state">Không tìm thấy chủ đề ngữ pháp phù hợp.</div>';
 }
 
 function renderDashboardChallenge() {
@@ -649,6 +1348,171 @@ function getDifficultyStars(level, difficulty) {
   const filled = '★'.repeat(difficulty || 1);
   const empty = '☆'.repeat(5 - (difficulty || 1));
   return `${level} ${filled}${empty}`;
+}
+
+function shuffleArray(items) {
+  const arr = [...items];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function getRandomItems(items, count, excludeSet = new Set()) {
+  if (!Array.isArray(items) || !items.length) return [];
+  const pool = items.filter(item => !excludeSet.has(item));
+  return shuffleArray(pool).slice(0, count);
+}
+
+function getQuizSourceVocabularies() {
+  return vocabularies.filter(vocab => {
+    const matchLevel = quizVocabSelectedLevel === 'all' || vocab.level === quizVocabSelectedLevel;
+    const matchTopic = quizVocabSelectedTopic === 'all' || vocab.topic === quizVocabSelectedTopic;
+    return matchLevel && matchTopic;
+  });
+}
+
+function getQuizSourceGrammarLessons() {
+  const tags = getAllGrammarTags();
+  const selectedTag = tags.includes(quizGrammarSelectedTopic) ? quizGrammarSelectedTopic : 'all';
+  return grammarLessons.filter(lesson => {
+    const level = getGrammarLevelById(lesson.id);
+    const lessonTags = inferGrammarTags(lesson.id);
+    const matchLevel = quizGrammarSelectedLevel === 'all' || level === quizGrammarSelectedLevel;
+    const matchTag = selectedTag === 'all' || lessonTags.includes(selectedTag);
+    return matchLevel && matchTag;
+  });
+}
+
+function buildQuizQuestionsFromVocab(options = {}) {
+  const { count = 10 } = options;
+  const source = getQuizSourceVocabularies();
+  if (source.length < 4) return null;
+
+  const questions = [];
+  const used = new Set();
+  const maxQuestions = Math.min(count, source.length);
+
+  for (let i = 0; i < maxQuestions; i += 1) {
+    // chọn 1 mục ngẫu nhiên chưa dùng
+    let pick = null;
+    let safety = 0;
+    while (!pick && safety < 50) {
+      const candidate = source[Math.floor(Math.random() * source.length)];
+      if (!used.has(candidate.word)) pick = candidate;
+      safety += 1;
+    }
+    if (!pick) break;
+    used.add(pick.word);
+
+    const askMeaning = Math.random() < 0.55;
+    if (askMeaning) {
+      const correct = pick.meaning;
+      const exclude = new Set([correct]);
+      const distractors = shuffleArray(source.map(item => item.meaning).filter(Boolean)).filter(item => !exclude.has(item));
+      const choices = shuffleArray([correct, ...distractors.slice(0, 3)]);
+      questions.push({
+        level: pick.level,
+        topic: pick.topic,
+        question: `“${pick.word}” nghĩa là gì?`,
+        choices,
+        answer: correct
+      });
+    } else {
+      const correct = pick.word;
+      const exclude = new Set([correct]);
+      const distractors = shuffleArray(source.map(item => item.word).filter(Boolean)).filter(item => !exclude.has(item));
+      const choices = shuffleArray([correct, ...distractors.slice(0, 3)]);
+      questions.push({
+        level: pick.level,
+        topic: pick.topic,
+        question: `Từ nào có nghĩa: “${pick.meaning}”?`,
+        choices,
+        answer: correct
+      });
+    }
+  }
+
+  // luôn thêm vài câu mẫu cố định để đa dạng
+  const extra = shuffleArray(baseQuizQuestions).slice(0, 2);
+  return shuffleArray([...questions, ...extra]).slice(0, Math.max(6, Math.min(12, questions.length + extra.length)));
+}
+
+function buildQuizQuestionsFromGrammar(options = {}) {
+  const { count = 10 } = options;
+  const source = getQuizSourceGrammarLessons();
+  if (source.length < 4) return null;
+
+  const questions = [];
+  const used = new Set();
+  const maxQuestions = Math.min(count, source.length);
+
+  for (let i = 0; i < maxQuestions; i += 1) {
+    let pick = null;
+    let safety = 0;
+    while (!pick && safety < 50) {
+      const candidate = source[Math.floor(Math.random() * source.length)];
+      if (!used.has(candidate.id)) pick = candidate;
+      safety += 1;
+    }
+    if (!pick) break;
+    used.add(pick.id);
+
+    const correct = pick.title;
+    const distractors = shuffleArray(source.map(item => item.title).filter(Boolean)).filter(item => item !== correct);
+    const choices = shuffleArray([correct, ...distractors.slice(0, 3)]);
+    questions.push({
+      level: getGrammarLevelById(pick.id),
+      topic: inferGrammarTags(pick.id)[0] || 'Ngữ pháp',
+      question: `Ví dụ sau thuộc chủ điểm nào?\n\n${pick.example}`,
+      choices,
+      answer: correct
+    });
+  }
+
+  return shuffleArray(questions).slice(0, Math.max(6, Math.min(12, questions.length)));
+}
+
+function renderQuizFilters() {
+  if (!quizLevelButtons || !quizTopicButtons) return;
+  if (quizModeVocab) quizModeVocab.classList.toggle('active', quizMode === 'vocab');
+  if (quizModeGrammar) quizModeGrammar.classList.toggle('active', quizMode === 'grammar');
+
+  const isGrammar = quizMode === 'grammar';
+  const levels = isGrammar ? ['all', 'A1', 'A2', 'B1', 'B2'] : ['all', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+  const selectedLevel = isGrammar ? quizGrammarSelectedLevel : quizVocabSelectedLevel;
+  const selectedTopic = isGrammar ? quizGrammarSelectedTopic : quizVocabSelectedTopic;
+  const topics = isGrammar ? getAllGrammarTags() : vocabTopics;
+
+  quizLevelButtons.innerHTML = levels.map(level => `
+    <button class="pill quiz-level-button ${selectedLevel === level ? 'active' : ''}" data-quiz-level="${level}">
+      ${level === 'all' ? 'Tất cả' : level}
+    </button>
+  `).join('');
+
+  quizTopicButtons.innerHTML = topics.map(topic => `
+    <button class="pill quiz-topic-button ${selectedTopic === topic ? 'active' : ''}" data-quiz-topic="${topic}">
+      ${topic === 'all' ? (isGrammar ? 'Tất cả chủ điểm' : 'Tất cả chủ đề') : topic}
+    </button>
+  `).join('');
+
+  updateQuizFilterSummary();
+}
+
+function updateQuizFilterSummary() {
+  if (!quizFilterSummary) return;
+  if (quizMode === 'grammar') {
+    const source = getQuizSourceGrammarLessons();
+    const levelLabel = quizGrammarSelectedLevel === 'all' ? 'Tất cả cấp độ' : `Cấp độ ${quizGrammarSelectedLevel}`;
+    const topicLabel = quizGrammarSelectedTopic === 'all' ? 'Tất cả chủ điểm' : `Chủ điểm: ${quizGrammarSelectedTopic}`;
+    quizFilterSummary.textContent = `${levelLabel} • ${topicLabel} • Ngân hàng: ${source.length} bài.`;
+    return;
+  }
+  const source = getQuizSourceVocabularies();
+  const levelLabel = quizVocabSelectedLevel === 'all' ? 'Tất cả cấp độ' : `Cấp độ ${quizVocabSelectedLevel}`;
+  const topicLabel = quizVocabSelectedTopic === 'all' ? 'Tất cả chủ đề' : `Chủ đề: ${quizVocabSelectedTopic}`;
+  quizFilterSummary.textContent = `${levelLabel} • ${topicLabel} • Ngân hàng: ${source.length} từ.`;
 }
 
 function similarityScore(a, b) {
@@ -780,7 +1644,7 @@ function setupSpeechRecognition(forceReset = false) {
     }
     let errorMessage = `Nhận diện giọng nói dừng do lỗi: ${event.error}. Hãy thử lại.`;
     if (event.error === 'no-speech') {
-      errorMessage = 'Không bắt được giọng nói. Hãy thử nói rõ hơn hoặc dùng localhost/HTTPS thay vì 127.0.0.1 nếu trang chạy trên địa chỉ đó.';
+      errorMessage = 'Không bắt được giọng nói. Hãy thử nói rõ hơn, kiểm tra micro, và đảm bảo bạn đang mở trang trên HTTPS hoặc localhost/127.0.0.1.';
     }
     if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
       errorMessage = 'Micro chưa được cấp phép hoặc trình duyệt chặn. Kiểm tra quyền micro và làm mới trang.';
@@ -923,10 +1787,10 @@ async function syncToCloudNow(options = {}) {
       updatedAt: new Date().toISOString(),
       data: payload.data
     }, { merge: true });
-    setAuthStatus(`Da dong bo luc ${new Date().toLocaleTimeString('vi-VN')}.`);
+    setAuthStatus(`Đã đồng bộ lúc ${new Date().toLocaleTimeString('vi-VN')}.`);
     if (manual) showToast('Đồng bộ thành công.');
   } catch {
-    setAuthStatus('Dong bo that bai. Kiem tra cau hinh Firebase hoac mang.', true);
+    setAuthStatus('Đồng bộ thất bại. Kiểm tra cấu hình Firebase hoặc mạng.', true);
     if (manual) showToast('Đồng bộ thất bại.', true);
   } finally {
     cloudSyncInProgress = false;
@@ -946,7 +1810,7 @@ async function pullCloudData() {
   try {
     const snap = await ref.get();
     if (!snap.exists) {
-      setAuthStatus('Dang nhap thanh cong. Chua co du lieu cloud, se tao khi ban hoc.');
+      setAuthStatus('Đăng nhập thành công. Chưa có dữ liệu cloud, hệ thống sẽ tạo khi bạn học.');
       updateAuthButtons();
       return;
     }
@@ -954,21 +1818,21 @@ async function pullCloudData() {
     suppressCloudSync = true;
     applyBackupData({ data: cloudPayload.data || {} });
     suppressCloudSync = false;
-    setAuthStatus('Da tai tien do tu cloud thanh cong.');
+    setAuthStatus('Đã tải tiến độ từ cloud thành công.');
   } catch {
     suppressCloudSync = false;
-    setAuthStatus('Khong tai du lieu cloud duoc. Vui long thu lai.', true);
+    setAuthStatus('Không tải dữ liệu cloud được. Vui lòng thử lại.', true);
   }
   updateAuthButtons();
 }
 
 function initFirebaseSync() {
   if (!window.firebase) {
-    setAuthStatus('Khong tai duoc Firebase SDK.', true);
+    setAuthStatus('Không tải được Firebase SDK.', true);
     return;
   }
   if (!isFirebaseConfigured()) {
-    setAuthStatus('Can dien firebaseConfig trong app.js de bat dong bo tai khoan.', true);
+    setAuthStatus('Cần điền firebaseConfig trong app.js để bật đồng bộ tài khoản.', true);
     updateAuthButtons();
     return;
   }
@@ -994,7 +1858,7 @@ function initFirebaseSync() {
       }
     });
   } catch {
-    setAuthStatus('Khoi tao Firebase that bai. Kiem tra firebaseConfig.', true);
+    setAuthStatus('Khởi tạo Firebase thất bại. Kiểm tra firebaseConfig.', true);
   }
 }
 
@@ -1094,12 +1958,21 @@ function createBackupPayload() {
       frenchCoachStats: readStorage('frenchCoachStats', null),
       frenchCoachFavorites: readStorage('frenchCoachFavorites', []),
       frenchCoachHistory: readStorage('frenchCoachHistory', []),
+      frenchCoachGrammarRead: readStorage('frenchCoachGrammarRead', []),
       frenchCoachRoadmap: readStorage('frenchCoachRoadmap', {}),
       frenchCoachDailyGoal: readStorage('frenchCoachDailyGoal', null),
       frenchCoachTheme: localStorage.getItem('frenchCoachTheme') || 'light',
       frenchCoachUi: {
         selectedLevel,
         selectedTopic,
+        quizMode,
+        quizVocabSelectedLevel,
+        quizVocabSelectedTopic,
+        quizGrammarSelectedLevel,
+        quizGrammarSelectedTopic,
+        grammarSelectedLevel,
+        grammarSelectedTag,
+        grammarSelectedStatus,
         onlyFavorites
       }
     }
@@ -1140,6 +2013,9 @@ function applyBackupData(payload) {
   if (Array.isArray(data.frenchCoachHistory)) {
     localStorage.setItem('frenchCoachHistory', JSON.stringify(data.frenchCoachHistory));
   }
+  if (Array.isArray(data.frenchCoachGrammarRead)) {
+    localStorage.setItem('frenchCoachGrammarRead', JSON.stringify(data.frenchCoachGrammarRead));
+  }
   if (data.frenchCoachRoadmap && typeof data.frenchCoachRoadmap === 'object') {
     localStorage.setItem('frenchCoachRoadmap', JSON.stringify(data.frenchCoachRoadmap));
   }
@@ -1153,14 +2029,25 @@ function applyBackupData(payload) {
   if (data.frenchCoachUi && typeof data.frenchCoachUi === 'object') {
     selectedLevel = data.frenchCoachUi.selectedLevel || 'all';
     selectedTopic = data.frenchCoachUi.selectedTopic || 'all';
+    quizMode = data.frenchCoachUi.quizMode || 'vocab';
+    quizVocabSelectedLevel = data.frenchCoachUi.quizVocabSelectedLevel || 'all';
+    quizVocabSelectedTopic = data.frenchCoachUi.quizVocabSelectedTopic || 'all';
+    quizGrammarSelectedLevel = data.frenchCoachUi.quizGrammarSelectedLevel || 'all';
+    quizGrammarSelectedTopic = data.frenchCoachUi.quizGrammarSelectedTopic || 'all';
+    grammarSelectedLevel = data.frenchCoachUi.grammarSelectedLevel || 'all';
+    grammarSelectedTag = data.frenchCoachUi.grammarSelectedTag || 'all';
+    grammarSelectedStatus = data.frenchCoachUi.grammarSelectedStatus || 'all';
     onlyFavorites = Boolean(data.frenchCoachUi.onlyFavorites);
   }
 
   loadFavorites();
   loadHistory();
+  loadGrammarRead();
   loadRoadmap();
   loadDailyGoal();
   renderTopicButtons();
+  renderGrammarFilters();
+  renderQuizFilters();
   renderVocabList();
   renderGrammar();
   renderHistory();
@@ -1174,6 +2061,9 @@ function applyBackupData(payload) {
   });
   favoriteFilter.classList.toggle('favorite-active', onlyFavorites);
   favoriteFilter.textContent = onlyFavorites ? 'Bỏ lọc' : 'Chỉ yêu thích';
+
+  // Lưu lại UI prefs để giữ trạng thái qua lần reload tiếp theo
+  saveUiPreferences();
 }
 
 function importBackupFile(file) {
@@ -1203,13 +2093,20 @@ function loadTheme() {
 }
 
 function startQuizSession() {
-  quizState = { current: 0, score: 0, total: quizQuestions.length, active: true };
+  const questions = quizMode === 'grammar'
+    ? buildQuizQuestionsFromGrammar({ count: 10 })
+    : buildQuizQuestionsFromVocab({ count: 10 });
+  if (!questions || !questions.length) {
+    showToast('Không đủ dữ liệu cho quiz theo bộ lọc hiện tại. Hãy chọn “Tất cả” hoặc đổi bộ lọc.', true);
+    return;
+  }
+  quizState = { current: 0, score: 0, total: questions.length, active: true, questions };
   showQuizQuestion();
 }
 
 function showQuizQuestion() {
   if (!quizState.active) return;
-  const question = quizQuestions[quizState.current];
+  const question = quizState.questions[quizState.current];
   quizQuestion.textContent = question.question;
   quizAnswers.innerHTML = question.choices.map(choice => `
     <button class="pill answer-choice">${choice}</button>
@@ -1219,7 +2116,7 @@ function showQuizQuestion() {
 }
 
 function evaluateQuizChoice(answer) {
-  const currentQuestion = quizQuestions[quizState.current];
+  const currentQuestion = quizState.questions[quizState.current];
   const correct = answer === currentQuestion.answer;
   if (correct) quizState.score += 1;
   quizState.current += 1;
@@ -1261,6 +2158,12 @@ practiceTabs.forEach(tab => {
 
 startSpeaking.addEventListener('click', () => {
   speechMode = 'speaking';
+  updateSpeechHints();
+  if (!isSpeechFeatureLikelyToWork()) {
+    speakingFeedback.textContent = 'Môi trường hiện tại có thể không hỗ trợ SpeechRecognition. Hãy chuyển sang HTTPS hoặc localhost/127.0.0.1 rồi thử lại.';
+    speakingFeedback.style.color = '#ff6b6b';
+    return;
+  }
   setupSpeechRecognition(true);
   if (beginSpeechRecognition()) {
     speakingFeedback.textContent = 'Đang nghe bạn nói...';
@@ -1280,6 +2183,12 @@ playPronunciationPhrase.addEventListener('click', () => {
 
 startPronunciation.addEventListener('click', () => {
   speechMode = 'pronunciation';
+  updateSpeechHints();
+  if (!isSpeechFeatureLikelyToWork()) {
+    pronunciationFeedback.textContent = 'Môi trường hiện tại có thể không hỗ trợ SpeechRecognition. Hãy chuyển sang HTTPS hoặc localhost/127.0.0.1 rồi thử lại.';
+    pronunciationFeedback.style.color = '#ff6b6b';
+    return;
+  }
   setupSpeechRecognition(true);
   if (beginSpeechRecognition()) {
     pronunciationFeedback.textContent = 'Đang nghe phát âm của bạn...';
@@ -1317,6 +2226,50 @@ grammarSearch.addEventListener('input', event => {
   }, 150);
 });
 
+if (grammarList) {
+  grammarList.addEventListener('click', event => {
+    if (event.target.matches('.grammar-mark')) {
+      toggleGrammarRead(event.target.dataset.grammar);
+      return;
+    }
+    if (event.target.matches('.grammar-toggle')) {
+      const id = event.target.dataset.grammarToggle;
+      expandedGrammarId = expandedGrammarId === id ? null : id;
+      renderGrammar();
+    }
+  });
+}
+
+if (grammarLevelButtons) {
+  grammarLevelButtons.addEventListener('click', event => {
+    if (!event.target.matches('.grammar-level-button')) return;
+    grammarSelectedLevel = event.target.dataset.grammarLevel || 'all';
+    renderGrammarFilters();
+    renderGrammar();
+    saveUiPreferences();
+  });
+}
+
+if (grammarTagButtons) {
+  grammarTagButtons.addEventListener('click', event => {
+    if (!event.target.matches('.grammar-tag-button')) return;
+    grammarSelectedTag = event.target.dataset.grammarTag || 'all';
+    renderGrammarFilters();
+    renderGrammar();
+    saveUiPreferences();
+  });
+}
+
+if (grammarStatusButtons) {
+  grammarStatusButtons.addEventListener('click', event => {
+    if (!event.target.matches('.grammar-status-button')) return;
+    grammarSelectedStatus = event.target.dataset.grammarStatus || 'all';
+    renderGrammarFilters();
+    renderGrammar();
+    saveUiPreferences();
+  });
+}
+
 vocabSearch.addEventListener('input', event => {
   clearTimeout(vocabSearchDebounce);
   vocabSearchDebounce = setTimeout(() => {
@@ -1339,6 +2292,7 @@ levelButtons.forEach(button => {
     vocabVisibleLimit = 80;
     levelButtons.forEach(btn => btn.classList.toggle('active', btn === button));
     renderVocabList();
+    saveUiPreferences();
   });
 });
 
@@ -1348,7 +2302,40 @@ topicButtons.addEventListener('click', event => {
   vocabVisibleLimit = 80;
   renderTopicButtons();
   renderVocabList();
+  saveUiPreferences();
 });
+
+if (quizModeVocab && quizModeGrammar) {
+  [quizModeVocab, quizModeGrammar].forEach(button => {
+    button.addEventListener('click', () => {
+      quizMode = button.dataset.quizMode || 'vocab';
+      renderQuizFilters();
+      saveUiPreferences();
+    });
+  });
+}
+
+if (quizLevelButtons) {
+  quizLevelButtons.addEventListener('click', event => {
+    if (!event.target.matches('.quiz-level-button')) return;
+    const level = event.target.dataset.quizLevel || 'all';
+    if (quizMode === 'grammar') quizGrammarSelectedLevel = level;
+    else quizVocabSelectedLevel = level;
+    renderQuizFilters();
+    saveUiPreferences();
+  });
+}
+
+if (quizTopicButtons) {
+  quizTopicButtons.addEventListener('click', event => {
+    if (!event.target.matches('.quiz-topic-button')) return;
+    const topic = event.target.dataset.quizTopic || 'all';
+    if (quizMode === 'grammar') quizGrammarSelectedTopic = topic;
+    else quizVocabSelectedTopic = topic;
+    renderQuizFilters();
+    saveUiPreferences();
+  });
+}
 
 checkAnswer.addEventListener('click', () => {
   const answer = practiceAnswer.value.trim();
@@ -1388,6 +2375,7 @@ favoriteFilter.addEventListener('click', () => {
   favoriteFilter.classList.toggle('favorite-active', onlyFavorites);
   favoriteFilter.textContent = onlyFavorites ? 'Bỏ lọc' : 'Chỉ yêu thích';
   renderVocabList();
+  saveUiPreferences();
 });
 
 if (loadMoreVocab) {
@@ -1485,12 +2473,16 @@ themeToggle.addEventListener('click', () => setTheme(!document.documentElement.c
 themeToggleBottom.addEventListener('click', () => setTheme(!document.documentElement.classList.contains('dark')));
 
 function init() {
+  loadUiPreferences();
   loadFavorites();
   loadHistory();
+  loadGrammarRead();
   loadRoadmap();
   loadDailyGoal();
   renderFlashcard();
   renderTopicButtons();
+  renderGrammarFilters();
+  renderQuizFilters();
   renderVocabList();
   renderGrammar();
   renderPractice();
