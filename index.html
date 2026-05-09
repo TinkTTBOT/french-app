@@ -153,10 +153,6 @@
         <div class="search-bar">
           <input id="grammarSearch" type="search" placeholder="Tìm ngữ pháp..." />
         </div>
-        <div class="levels-row" id="grammarLevelButtons"></div>
-        <div class="topics-row" id="grammarTagButtons"></div>
-        <div class="levels-row" id="grammarStatusButtons"></div>
-        <p id="grammarProgress" class="vocab-result-summary">Đã học 0/0 bài ngữ pháp.</p>
         <div class="card-grid" id="grammarList"></div>
       </section>
 
@@ -185,10 +181,29 @@
           <button class="pill practice-tab" data-tab="dialogue">Hội thoại</button>
         </div>
 
+        <div class="practice-filters" aria-label="Bộ lọc luyện tập">
+          <div class="filter-group">
+            <label for="practiceLevelFilter">Mức độ</label>
+            <select id="practiceLevelFilter"></select>
+          </div>
+          <div class="filter-group">
+            <label for="practiceTopicFilter">Chủ đề</label>
+            <select id="practiceTopicFilter"></select>
+          </div>
+          <div class="filter-group">
+            <label for="practiceOrderFilter">Thứ tự</label>
+            <select id="practiceOrderFilter">
+              <option value="easy">Dễ → Khó</option>
+              <option value="hard">Khó → Dễ</option>
+            </select>
+          </div>
+        </div>
+
         <div id="translatePanel" class="practice-panel">
           <article class="card practice-card">
             <div>
               <h4>Chuyển câu sau sang tiếng Pháp</h4>
+              <p id="practiceMeta" class="task-meta"></p>
               <p id="practicePrompt">Tôi muốn cà phê.</p>
               <textarea id="practiceAnswer" placeholder="Viết câu tiếng Pháp..." rows="4"></textarea>
               <div class="practice-buttons">
@@ -204,6 +219,7 @@
           <article class="card practice-card">
             <div>
               <h4>Luyện nói</h4>
+              <p id="speakingMeta" class="task-meta"></p>
               <p id="speakingInstructions">Nhấn nút và nói theo câu tiếng Pháp.</p>
               <p id="speakingPrompt">Je parle de ma journée.</p>
               <div class="practice-buttons">
@@ -220,6 +236,7 @@
           <article class="card practice-card">
             <div>
               <h4>Phát âm chính xác</h4>
+              <p id="pronunciationMeta" class="task-meta"></p>
               <p>Nghe mẫu, nói theo và nhận phản hồi phát âm.</p>
               <p id="pronunciationPrompt">Je voudrais un café, s’il vous plaît.</p>
               <div class="practice-buttons">
@@ -238,6 +255,7 @@
             <div>
               <h4>Hội thoại thực tế</h4>
               <p>Đọc hội thoại, nghe và xem dịch nghĩa từng câu.</p>
+              <p id="dialogueMeta" class="task-meta"></p>
               <div id="dialogueContent" class="dialogue-card">
                 <p id="dialogueTitle"><strong>Quán cà phê</strong></p>
                 <div id="dialogueText"></div>
@@ -262,14 +280,6 @@
           </div>
           <button id="startQuiz" class="pill">Bắt đầu quiz</button>
         </div>
-
-        <div class="practice-tabs">
-          <button id="quizModeVocab" class="pill practice-tab active" data-quiz-mode="vocab">Từ vựng</button>
-          <button id="quizModeGrammar" class="pill practice-tab" data-quiz-mode="grammar">Ngữ pháp</button>
-        </div>
-        <p id="quizFilterSummary" class="vocab-result-summary">Chọn cấp độ và chủ đề để bắt đầu.</p>
-        <div class="levels-row" id="quizLevelButtons"></div>
-        <div class="topics-row" id="quizTopicButtons"></div>
 
         <article class="card quiz-card">
           <div id="quizContainer">
@@ -325,6 +335,14 @@
             <h4>Chế độ tối / sáng</h4>
             <p>Bật sáng chế độ tối để học đỡ mỏi mắt.</p>
             <button id="themeToggleBottom" class="pill">Chuyển chế độ</button>
+          </div>
+          <div>
+            <h4>Giọng đọc tiếng Pháp</h4>
+            <p>Chọn giọng đọc dùng cho nút “Nghe” (từ vựng, phát âm, hội thoại).</p>
+            <div class="voice-settings">
+              <select id="voiceSelect" aria-label="Chọn giọng đọc"></select>
+              <button id="testVoice" class="pill secondary" type="button">Nghe thử</button>
+            </div>
           </div>
           <div>
             <h4>Backup bài học</h4>
