@@ -86,72 +86,324 @@ const passwordStrengthBar = document.getElementById('passwordStrengthBar');
 const passwordStrengthText = document.getElementById('passwordStrengthText');
 const toastContainer = document.getElementById('toastContainer');
 
+// Bộ từ vựng “thực tế” (A1–C2). Phần còn lại sẽ được sinh tự động theo 20 chủ đề.
 const baseVocabularies = [
   { level: 'A1', topic: 'Chào hỏi', word: 'Bonjour', meaning: 'Xin chào', example: 'Bonjour, comment ça va ?', difficulty: 1 },
-  { level: 'A1', topic: 'Chào hỏi', word: 'Salut', meaning: 'Xin chào (thân mật)', example: 'Salut ! Tu vas bien ?', difficulty: 1 },
-  { level: 'A1', topic: 'Chào hỏi', word: 'Merci', meaning: 'Cảm ơn', example: 'Merci beaucoup pour votre aide.', difficulty: 1 },
-  { level: 'A1', topic: 'Cảm xúc', word: 'Ça va', meaning: 'Ổn, khỏe', example: 'Ça va ? Oui, ça va bien.', difficulty: 1 },
-  { level: 'A1', topic: 'Gia đình', word: 'Famille', meaning: 'Gia đình', example: 'Ma famille est grande.', difficulty: 1 },
-  { level: 'A1', topic: 'Mua sắm', word: 'Combien', meaning: 'Bao nhiêu', example: 'Combien ça coûte ?', difficulty: 1 },
-  { level: 'A2', topic: 'Du lịch', word: 'Où', meaning: 'Ở đâu', example: 'Où est la gare ?', difficulty: 2 },
-  { level: 'A2', topic: 'Du lịch', word: 'Demain', meaning: 'Ngày mai', example: 'Je pars demain.', difficulty: 2 },
-  { level: 'A2', topic: 'Ẩm thực', word: 'Un croissant', meaning: 'Một chiếc bánh sừng bò', example: 'Je voudrais un croissant.', difficulty: 2 },
-  { level: 'A2', topic: 'Mua sắm', word: 'La taille', meaning: 'Kích cỡ', example: 'Quelle est votre taille ?', difficulty: 2 },
-  { level: 'A2', topic: 'Giờ giấc', word: 'Maintenant', meaning: 'Bây giờ', example: 'Je suis occupé maintenant.', difficulty: 2 },
-  { level: 'B1', topic: 'Gia đình', word: 'Mon frère', meaning: 'Anh trai tôi', example: 'Mon frère habite à Lyon.', difficulty: 3 },
-  { level: 'B1', topic: 'Cảm xúc', word: 'Heureux', meaning: 'Hạnh phúc', example: 'Je suis très heureux aujourd’hui.', difficulty: 3 },
-  { level: 'B1', topic: 'Du lịch', word: 'Réserver', meaning: 'Đặt (phòng, vé)', example: 'Je voudrais réserver une chambre.', difficulty: 3 },
-  { level: 'B1', topic: 'Ẩm thực', word: 'Le menu', meaning: 'Thực đơn', example: 'Puis-je voir le menu, s’il vous plaît ?', difficulty: 3 },
-  { level: 'B2', topic: 'Hội thoại', word: 'Cependant', meaning: 'Tuy nhiên', example: 'Cependant, je ne suis pas sûr.', difficulty: 4 },
-  { level: 'B2', topic: 'Quan hệ', word: 'Par conséquent', meaning: 'Do đó', example: 'Par conséquent, nous devons partir.', difficulty: 4 },
-  { level: 'B2', topic: 'Suy nghĩ', word: 'Peut-être', meaning: 'Có lẽ', example: 'Peut-être que je reviendrai demain.', difficulty: 4 },
-  { level: 'B2', topic: 'Giờ giấc', word: 'Tôt', meaning: 'Sớm', example: 'Je me lève tôt le matin.', difficulty: 4 },
-  { level: 'C1', topic: 'Tư duy', word: 'Néanmoins', meaning: 'Tuy nhiên', example: 'Néanmoins, j’ai une autre idée.', difficulty: 5 },
-  { level: 'C1', topic: 'Bình luận', word: 'Toutefois', meaning: 'Tuy nhiên', example: 'Toutefois, il faut être prudent.', difficulty: 5 },
-  { level: 'C2', topic: 'Phân tích', word: 'Dès lors', meaning: 'Kể từ đó', example: 'Dès lors, tout a changé.', difficulty: 5 },
-  { level: 'C2', topic: 'Trình bày', word: 'Quoi qu’il en soit', meaning: 'Dù sao đi nữa', example: 'Quoi qu’il en soit, je viendrai.', difficulty: 5 },
-  { level: 'C2', topic: 'Khẳng định', word: 'Effectivement', meaning: 'Thật vậy', example: 'Effectivement, c’est une bonne idée.', difficulty: 5 }
+  { level: 'A1', topic: 'Lịch sự', word: 'S’il vous plaît', meaning: 'Làm ơn', example: 'Un café, s’il vous plaît.', difficulty: 1 },
+  { level: 'A1', topic: 'Lịch sự', word: 'Merci', meaning: 'Cảm ơn', example: 'Merci beaucoup !', difficulty: 1 },
+  { level: 'A1', topic: 'Lịch sự', word: 'De rien', meaning: 'Không có gì', example: '— Merci ! — De rien.', difficulty: 1 },
+  { level: 'A1', topic: 'Chào hỏi', word: 'Au revoir', meaning: 'Tạm biệt', example: 'Au revoir, à demain !', difficulty: 1 },
+  { level: 'A1', topic: 'Chào hỏi', word: 'Comment tu t’appelles ?', meaning: 'Bạn tên gì?', example: 'Comment tu t’appelles ?', difficulty: 1 },
+  { level: 'A1', topic: 'Giới thiệu', word: 'Je m’appelle…', meaning: 'Tôi tên là…', example: 'Je m’appelle Nam.', difficulty: 1 },
+  { level: 'A1', topic: 'Du lịch', word: 'Où est la gare ?', meaning: 'Nhà ga ở đâu?', example: 'Excusez-moi, où est la gare ?', difficulty: 1 },
+  { level: 'A1', topic: 'Ẩm thực', word: 'Je voudrais un café', meaning: 'Tôi muốn một cà phê', example: 'Je voudrais un café, s’il vous plaît.', difficulty: 1 },
+  { level: 'A1', topic: 'Mua sắm', word: 'Combien ça coûte ?', meaning: 'Cái này bao nhiêu tiền?', example: 'Combien ça coûte ?', difficulty: 1 },
+  { level: 'A2', topic: 'Thời gian', word: 'Aujourd’hui', meaning: 'Hôm nay', example: 'Aujourd’hui, je travaille.', difficulty: 2 },
+  { level: 'A2', topic: 'Thời gian', word: 'Demain', meaning: 'Ngày mai', example: 'Je pars demain.', difficulty: 2 },
+  { level: 'A2', topic: 'Nhà hàng', word: 'L’addition, s’il vous plaît', meaning: 'Cho tôi xin hóa đơn', example: 'L’addition, s’il vous plaît.', difficulty: 2 },
+  { level: 'A2', topic: 'Giao thông', word: 'un billet', meaning: 'một vé', example: 'Je voudrais un billet.', difficulty: 2 },
+  { level: 'A2', topic: 'Sức khỏe', word: 'J’ai mal à la tête', meaning: 'Tôi bị đau đầu', example: 'J’ai mal à la tête.', difficulty: 2 },
+  { level: 'B1', topic: 'Công việc', word: 'un rendez-vous', meaning: 'một cuộc hẹn', example: 'J’ai un rendez-vous à 15h.', difficulty: 3 },
+  { level: 'B1', topic: 'Công nghệ', word: 'un mot de passe', meaning: 'mật khẩu', example: 'J’ai oublié mon mot de passe.', difficulty: 3 },
+  { level: 'B1', topic: 'Giao tiếp', word: 'Je suis d’accord', meaning: 'Tôi đồng ý', example: 'Oui, je suis d’accord.', difficulty: 3 },
+  { level: 'B2', topic: 'Công việc', word: 'négocier', meaning: 'đàm phán', example: 'Nous devons négocier le contrat.', difficulty: 4 },
+  { level: 'B2', topic: 'Ngân hàng', word: 'un virement', meaning: 'chuyển khoản', example: 'Je fais un virement bancaire.', difficulty: 4 },
+  { level: 'C1', topic: 'Tranh luận', word: 'cependant', meaning: 'tuy nhiên', example: 'Cependant, je ne suis pas sûr.', difficulty: 5 },
+  { level: 'C2', topic: 'Trình bày', word: 'quoi qu’il en soit', meaning: 'dù sao đi nữa', example: 'Quoi qu’il en soit, je viendrai.', difficulty: 5 }
 ];
 
-function generateBulkVocabularies(count = 3000) {
+function generateRealLifeVocabularies(count = 3000) {
   const levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-  const topics = ['Du lịch', 'Gia đình', 'Công việc', 'Ẩm thực', 'Mua sắm', 'Sức khỏe', 'Học tập', 'Giao tiếp', 'Cảm xúc', 'Công nghệ'];
-  const subjects = ['Je', 'Tu', 'Nous', 'Vous', 'Ils', 'Elles'];
-  const verbs = [
-    { fr: 'apprendre', vi: 'học' }, { fr: 'préparer', vi: 'chuẩn bị' }, { fr: 'utiliser', vi: 'sử dụng' },
-    { fr: 'partager', vi: 'chia sẻ' }, { fr: 'choisir', vi: 'lựa chọn' }, { fr: 'améliorer', vi: 'cải thiện' },
-    { fr: 'organiser', vi: 'sắp xếp' }, { fr: 'observer', vi: 'quan sát' }, { fr: 'pratiquer', vi: 'luyện tập' },
-    { fr: 'expliquer', vi: 'giải thích' }, { fr: 'continuer', vi: 'tiếp tục' }, { fr: 'répéter', vi: 'lặp lại' }
-  ];
-  const objects = [
-    { fr: 'le vocabulaire', vi: 'từ vựng' }, { fr: 'la grammaire', vi: 'ngữ pháp' }, { fr: 'la prononciation', vi: 'phát âm' },
-    { fr: 'la conversation', vi: 'hội thoại' }, { fr: 'une phrase', vi: 'một câu' }, { fr: 'un exercice', vi: 'một bài tập' },
-    { fr: 'le dialogue', vi: 'đoạn hội thoại' }, { fr: 'la leçon', vi: 'bài học' }, { fr: 'la compréhension', vi: 'khả năng hiểu' },
-    { fr: 'la fluidité', vi: 'độ trôi chảy' }, { fr: 'la mémoire', vi: 'trí nhớ' }, { fr: 'la confiance', vi: 'sự tự tin' }
+  const levelDifficulty = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 5 };
+  const subjects = ['Je', 'Tu', 'Nous', 'Vous'];
+  const genericTime = ['aujourd’hui', 'demain', 'ce matin', 'ce soir', 'maintenant', 'souvent'];
+
+  const topics = [
+    {
+      topic: 'Chào hỏi',
+      phrases: [
+        { fr: 'Salut', vi: 'Chào (thân mật)', ex: 'Salut ! Tu vas bien ?' },
+        { fr: 'Enchanté(e)', vi: 'Rất vui được gặp', ex: 'Enchanté(e) !' },
+        { fr: 'À bientôt', vi: 'Hẹn gặp lại sớm', ex: 'À bientôt !' }
+      ],
+      verbs: [{ fr: 'saluer', vi: 'chào' }, { fr: 'rencontrer', vi: 'gặp' }, { fr: 'remercier', vi: 'cảm ơn' }],
+      objects: [{ fr: 'quelqu’un', vi: 'ai đó' }, { fr: 'un ami', vi: 'một người bạn' }, { fr: 'un collègue', vi: 'một đồng nghiệp' }]
+    },
+    {
+      topic: 'Lịch sự',
+      phrases: [
+        { fr: 'Excusez-moi', vi: 'Xin lỗi / làm phiền', ex: 'Excusez-moi, une question ?' },
+        { fr: 'Je suis désolé(e)', vi: 'Tôi xin lỗi', ex: 'Je suis désolé(e) du retard.' },
+        { fr: 'Pas de problème', vi: 'Không sao', ex: '— Désolé ! — Pas de problème.' }
+      ],
+      verbs: [{ fr: 'demander', vi: 'hỏi/yêu cầu' }, { fr: 'expliquer', vi: 'giải thích' }, { fr: 'aider', vi: 'giúp' }],
+      objects: [{ fr: 'une information', vi: 'một thông tin' }, { fr: 'une adresse', vi: 'một địa chỉ' }, { fr: 'un service', vi: 'một dịch vụ' }]
+    },
+    {
+      topic: 'Giới thiệu',
+      phrases: [
+        { fr: 'Je m’appelle…', vi: 'Tôi tên là…', ex: 'Je m’appelle Linh.' },
+        { fr: 'J’ai … ans', vi: 'Tôi … tuổi', ex: 'J’ai 20 ans.' },
+        { fr: 'Je viens de…', vi: 'Tôi đến từ…', ex: 'Je viens du Vietnam.' }
+      ],
+      verbs: [{ fr: 'présenter', vi: 'giới thiệu' }, { fr: 'décrire', vi: 'mô tả' }, { fr: 'parler de', vi: 'nói về' }],
+      objects: [{ fr: 'moi', vi: 'bản thân tôi' }, { fr: 'mon travail', vi: 'công việc của tôi' }, { fr: 'ma ville', vi: 'thành phố của tôi' }]
+    },
+    {
+      topic: 'Gia đình',
+      phrases: [
+        { fr: 'ma famille', vi: 'gia đình tôi', ex: 'Ma famille est grande.' },
+        { fr: 'un enfant', vi: 'một đứa trẻ', ex: 'J’ai un enfant.' },
+        { fr: 'un anniversaire', vi: 'sinh nhật', ex: 'C’est son anniversaire.' }
+      ],
+      verbs: [{ fr: 'appeler', vi: 'gọi' }, { fr: 'aider', vi: 'giúp' }, { fr: 'inviter', vi: 'mời' }, { fr: 'visiter', vi: 'thăm' }],
+      objects: [{ fr: 'mon père', vi: 'bố tôi' }, { fr: 'ma mère', vi: 'mẹ tôi' }, { fr: 'mon frère', vi: 'anh/em trai tôi' }, { fr: 'ma sœur', vi: 'chị/em gái tôi' }]
+    },
+    {
+      topic: 'Cảm xúc',
+      phrases: [
+        { fr: 'Je suis content(e)', vi: 'Tôi vui', ex: 'Je suis content(e) aujourd’hui.' },
+        { fr: 'Je suis fatigué(e)', vi: 'Tôi mệt', ex: 'Je suis fatigué(e) ce soir.' },
+        { fr: 'Je suis stressé(e)', vi: 'Tôi căng thẳng', ex: 'Je suis stressé(e) en ce moment.' }
+      ],
+      verbs: [{ fr: 'aimer', vi: 'thích/yêu' }, { fr: 'détester', vi: 'ghét' }, { fr: 'espérer', vi: 'hy vọng' }, { fr: 's’inquiéter', vi: 'lo lắng' }],
+      objects: [{ fr: 'ça', vi: 'điều đó' }, { fr: 'ce film', vi: 'bộ phim này' }, { fr: 'ce travail', vi: 'công việc này' }, { fr: 'cette idée', vi: 'ý tưởng này' }]
+    },
+    {
+      topic: 'Thời gian',
+      phrases: [
+        { fr: 'à quelle heure ?', vi: 'mấy giờ?', ex: 'À quelle heure on se voit ?' },
+        { fr: 'tout de suite', vi: 'ngay lập tức', ex: 'Je reviens tout de suite.' },
+        { fr: 'en retard', vi: 'trễ', ex: 'Je suis en retard.' }
+      ],
+      verbs: [{ fr: 'commencer', vi: 'bắt đầu' }, { fr: 'finir', vi: 'kết thúc' }, { fr: 'attendre', vi: 'chờ' }, { fr: 'planifier', vi: 'lên kế hoạch' }],
+      objects: [{ fr: 'un rendez-vous', vi: 'một cuộc hẹn' }, { fr: 'une réunion', vi: 'một cuộc họp' }, { fr: 'un horaire', vi: 'lịch trình' }, { fr: 'un programme', vi: 'chương trình' }]
+    },
+    {
+      topic: 'Du lịch',
+      phrases: [
+        { fr: 'un passeport', vi: 'hộ chiếu', ex: 'J’ai mon passeport.' },
+        { fr: 'une réservation', vi: 'một đặt chỗ', ex: 'J’ai une réservation.' },
+        { fr: 'un hôtel', vi: 'một khách sạn', ex: 'Je cherche un hôtel.' }
+      ],
+      verbs: [{ fr: 'réserver', vi: 'đặt' }, { fr: 'acheter', vi: 'mua' }, { fr: 'visiter', vi: 'tham quan' }, { fr: 'chercher', vi: 'tìm' }, { fr: 'annuler', vi: 'hủy' }],
+      objects: [{ fr: 'un billet', vi: 'một vé' }, { fr: 'un musée', vi: 'một bảo tàng' }, { fr: 'un plan', vi: 'bản đồ' }, { fr: 'une valise', vi: 'một vali' }, { fr: 'un visa', vi: 'một thị thực' }]
+    },
+    {
+      topic: 'Giao thông',
+      phrases: [
+        { fr: 'la station', vi: 'trạm/ga', ex: 'La station est là-bas.' },
+        { fr: 'un taxi', vi: 'một taxi', ex: 'Je prends un taxi.' },
+        { fr: 'un ticket', vi: 'một vé', ex: 'Où acheter un ticket ?' }
+      ],
+      verbs: [{ fr: 'prendre', vi: 'đi/đón (phương tiện)' }, { fr: 'changer', vi: 'đổi' }, { fr: 'descendre', vi: 'xuống' }, { fr: 'monter', vi: 'lên' }, { fr: 'payer', vi: 'trả tiền' }],
+      objects: [{ fr: 'le métro', vi: 'tàu điện ngầm' }, { fr: 'le bus', vi: 'xe buýt' }, { fr: 'un train', vi: 'một chuyến tàu' }, { fr: 'un vélo', vi: 'một xe đạp' }, { fr: 'un itinéraire', vi: 'lộ trình' }]
+    },
+    {
+      topic: 'Nhà ở',
+      phrases: [
+        { fr: 'un appartement', vi: 'một căn hộ', ex: 'Je cherche un appartement.' },
+        { fr: 'un loyer', vi: 'tiền thuê nhà', ex: 'Le loyer est cher.' },
+        { fr: 'une chambre', vi: 'một phòng', ex: 'Ma chambre est petite.' }
+      ],
+      verbs: [{ fr: 'louer', vi: 'thuê' }, { fr: 'nettoyer', vi: 'dọn dẹp' }, { fr: 'réparer', vi: 'sửa' }, { fr: 'installer', vi: 'lắp đặt' }, { fr: 'ouvrir', vi: 'mở' }],
+      objects: [{ fr: 'une porte', vi: 'một cái cửa' }, { fr: 'une fenêtre', vi: 'một cửa sổ' }, { fr: 'une cuisine', vi: 'một căn bếp' }, { fr: 'une salle de bain', vi: 'phòng tắm' }, { fr: 'une clé', vi: 'một chiếc chìa khóa' }]
+    },
+    {
+      topic: 'Công việc',
+      phrases: [
+        { fr: 'un e-mail', vi: 'một email', ex: 'Je t’envoie un e-mail.' },
+        { fr: 'un contrat', vi: 'một hợp đồng', ex: 'Je signe un contrat.' },
+        { fr: 'une réunion', vi: 'một cuộc họp', ex: 'Nous avons une réunion.' }
+      ],
+      verbs: [{ fr: 'travailler', vi: 'làm việc' }, { fr: 'envoyer', vi: 'gửi' }, { fr: 'recevoir', vi: 'nhận' }, { fr: 'organiser', vi: 'tổ chức' }, { fr: 'présenter', vi: 'trình bày' }],
+      objects: [{ fr: 'un projet', vi: 'một dự án' }, { fr: 'un rapport', vi: 'một báo cáo' }, { fr: 'un fichier', vi: 'một tệp' }, { fr: 'un client', vi: 'một khách hàng' }, { fr: 'un délai', vi: 'một thời hạn' }]
+    },
+    {
+      topic: 'Học tập',
+      phrases: [
+        { fr: 'un devoir', vi: 'bài tập về nhà', ex: 'J’ai un devoir à faire.' },
+        { fr: 'un examen', vi: 'một kỳ thi', ex: 'J’ai un examen demain.' },
+        { fr: 'une leçon', vi: 'một bài học', ex: 'Je révise une leçon.' }
+      ],
+      verbs: [{ fr: 'apprendre', vi: 'học' }, { fr: 'réviser', vi: 'ôn tập' }, { fr: 'comprendre', vi: 'hiểu' }, { fr: 'pratiquer', vi: 'luyện tập' }, { fr: 'répéter', vi: 'lặp lại' }],
+      objects: [{ fr: 'un mot', vi: 'một từ' }, { fr: 'une phrase', vi: 'một câu' }, { fr: 'la grammaire', vi: 'ngữ pháp' }, { fr: 'la prononciation', vi: 'phát âm' }, { fr: 'le vocabulaire', vi: 'từ vựng' }]
+    },
+    {
+      topic: 'Sức khỏe',
+      phrases: [
+        { fr: 'une pharmacie', vi: 'nhà thuốc', ex: 'Où est la pharmacie ?' },
+        { fr: 'un médecin', vi: 'bác sĩ', ex: 'Je dois voir un médecin.' },
+        { fr: 'un médicament', vi: 'thuốc', ex: 'Je prends un médicament.' }
+      ],
+      verbs: [{ fr: 'se reposer', vi: 'nghỉ ngơi' }, { fr: 'prendre', vi: 'uống/dùng' }, { fr: 'consulter', vi: 'khám' }, { fr: 'respirer', vi: 'thở' }, { fr: 'guérir', vi: 'khỏi bệnh' }],
+      objects: [{ fr: 'un rhume', vi: 'cảm lạnh' }, { fr: 'de la fièvre', vi: 'sốt' }, { fr: 'une douleur', vi: 'cơn đau' }, { fr: 'un pansement', vi: 'băng cá nhân' }, { fr: 'un rendez-vous', vi: 'cuộc hẹn' }]
+    },
+    {
+      topic: 'Ẩm thực',
+      phrases: [
+        { fr: 'un menu', vi: 'thực đơn', ex: 'Puis-je voir le menu ?' },
+        { fr: 'un dessert', vi: 'món tráng miệng', ex: 'Je prends un dessert.' },
+        { fr: 'de l’eau', vi: 'nước', ex: 'Je voudrais de l’eau.' }
+      ],
+      verbs: [{ fr: 'manger', vi: 'ăn' }, { fr: 'boire', vi: 'uống' }, { fr: 'commander', vi: 'gọi món/đặt' }, { fr: 'goûter', vi: 'nếm/thử' }, { fr: 'préparer', vi: 'chuẩn bị' }],
+      objects: [{ fr: 'un café', vi: 'một cà phê' }, { fr: 'un croissant', vi: 'một bánh sừng bò' }, { fr: 'du pain', vi: 'bánh mì' }, { fr: 'une salade', vi: 'một salad' }, { fr: 'une soupe', vi: 'một súp' }]
+    },
+    {
+      topic: 'Mua sắm',
+      phrases: [
+        { fr: 'une réduction', vi: 'giảm giá', ex: 'Il y a une réduction ?' },
+        { fr: 'la taille', vi: 'kích cỡ', ex: 'Quelle est la taille ?' },
+        { fr: 'une caisse', vi: 'quầy tính tiền', ex: 'La caisse est là-bas.' }
+      ],
+      verbs: [{ fr: 'acheter', vi: 'mua' }, { fr: 'payer', vi: 'trả tiền' }, { fr: 'choisir', vi: 'chọn' }, { fr: 'essayer', vi: 'thử' }, { fr: 'retourner', vi: 'đổi/trả' }],
+      objects: [{ fr: 'un vêtement', vi: 'một bộ quần áo' }, { fr: 'un cadeau', vi: 'một món quà' }, { fr: 'un prix', vi: 'một mức giá' }, { fr: 'une carte bancaire', vi: 'thẻ ngân hàng' }, { fr: 'un ticket de caisse', vi: 'hóa đơn' }]
+    },
+    {
+      topic: 'Công nghệ',
+      phrases: [
+        { fr: 'un téléphone', vi: 'điện thoại', ex: 'Mon téléphone est en panne.' },
+        { fr: 'un mot de passe', vi: 'mật khẩu', ex: 'J’ai oublié mon mot de passe.' },
+        { fr: 'le Wi‑Fi', vi: 'Wi‑Fi', ex: 'Le Wi‑Fi ne marche pas.' }
+      ],
+      verbs: [{ fr: 'installer', vi: 'cài đặt' }, { fr: 'mettre à jour', vi: 'cập nhật' }, { fr: 'télécharger', vi: 'tải xuống' }, { fr: 'connecter', vi: 'kết nối' }, { fr: 'réinitialiser', vi: 'đặt lại' }],
+      objects: [{ fr: 'une application', vi: 'một ứng dụng' }, { fr: 'un compte', vi: 'một tài khoản' }, { fr: 'un fichier', vi: 'một tệp' }, { fr: 'un ordinateur', vi: 'máy tính' }, { fr: 'un écran', vi: 'màn hình' }]
+    },
+    {
+      topic: 'Giải trí',
+      phrases: [
+        { fr: 'un film', vi: 'một bộ phim', ex: 'On regarde un film ?' },
+        { fr: 'un concert', vi: 'một buổi hòa nhạc', ex: 'Je vais à un concert.' },
+        { fr: 'un sport', vi: 'một môn thể thao', ex: 'Je fais du sport.' }
+      ],
+      verbs: [{ fr: 'regarder', vi: 'xem' }, { fr: 'écouter', vi: 'nghe' }, { fr: 'jouer', vi: 'chơi' }, { fr: 'sortir', vi: 'đi chơi' }, { fr: 'visiter', vi: 'tham quan' }],
+      objects: [{ fr: 'un musée', vi: 'một bảo tàng' }, { fr: 'un match', vi: 'một trận đấu' }, { fr: 'une chanson', vi: 'một bài hát' }, { fr: 'un jeu', vi: 'một trò chơi' }, { fr: 'un livre', vi: 'một quyển sách' }]
+    },
+    {
+      topic: 'Thời tiết',
+      phrases: [
+        { fr: 'il fait beau', vi: 'trời đẹp', ex: 'Aujourd’hui, il fait beau.' },
+        { fr: 'il pleut', vi: 'trời mưa', ex: 'Il pleut ce matin.' },
+        { fr: 'il fait froid', vi: 'trời lạnh', ex: 'Il fait froid en hiver.' }
+      ],
+      verbs: [{ fr: 'faire', vi: 'làm/đang (thời tiết)' }, { fr: 'pleuvoir', vi: 'mưa' }, { fr: 'neiger', vi: 'tuyết rơi' }],
+      objects: [{ fr: 'chaud', vi: 'nóng' }, { fr: 'froid', vi: 'lạnh' }, { fr: 'du vent', vi: 'gió' }, { fr: 'du soleil', vi: 'nắng' }, { fr: 'des nuages', vi: 'mây' }]
+    },
+    {
+      topic: 'Nhà hàng',
+      phrases: [
+        { fr: 'une table pour deux', vi: 'một bàn cho hai người', ex: 'Une table pour deux, s’il vous plaît.' },
+        { fr: 'sans gluten', vi: 'không gluten', ex: 'C’est sans gluten ?' },
+        { fr: 'Je suis allergique', vi: 'Tôi bị dị ứng', ex: 'Je suis allergique aux noix.' }
+      ],
+      verbs: [{ fr: 'réserver', vi: 'đặt' }, { fr: 'commander', vi: 'gọi món' }, { fr: 'demander', vi: 'yêu cầu' }, { fr: 'payer', vi: 'trả tiền' }, { fr: 'goûter', vi: 'thử' }],
+      objects: [{ fr: 'une table', vi: 'một cái bàn' }, { fr: 'un plat', vi: 'một món' }, { fr: 'un menu', vi: 'thực đơn' }, { fr: 'l’addition', vi: 'hóa đơn' }, { fr: 'une réservation', vi: 'đặt chỗ' }]
+    },
+    {
+      topic: 'Ngân hàng',
+      phrases: [
+        { fr: 'une carte', vi: 'một thẻ', ex: 'Je veux une carte bancaire.' },
+        { fr: 'un retrait', vi: 'rút tiền', ex: 'Je fais un retrait.' },
+        { fr: 'un code', vi: 'mã PIN', ex: 'J’ai oublié mon code.' }
+      ],
+      verbs: [{ fr: 'retirer', vi: 'rút' }, { fr: 'déposer', vi: 'gửi/nộp' }, { fr: 'payer', vi: 'trả' }, { fr: 'transférer', vi: 'chuyển' }, { fr: 'bloquer', vi: 'khóa' }],
+      objects: [{ fr: 'de l’argent', vi: 'tiền' }, { fr: 'un compte', vi: 'tài khoản' }, { fr: 'un virement', vi: 'chuyển khoản' }, { fr: 'une carte bancaire', vi: 'thẻ ngân hàng' }, { fr: 'un reçu', vi: 'biên lai' }]
+    },
+    {
+      topic: 'Dịch vụ',
+      phrases: [
+        { fr: 'un colis', vi: 'một bưu kiện', ex: 'J’envoie un colis.' },
+        { fr: 'une réparation', vi: 'một lần sửa chữa', ex: 'Je demande une réparation.' },
+        { fr: 'un formulaire', vi: 'một biểu mẫu', ex: 'Je remplis un formulaire.' }
+      ],
+      verbs: [{ fr: 'envoyer', vi: 'gửi' }, { fr: 'recevoir', vi: 'nhận' }, { fr: 'remplir', vi: 'điền' }, { fr: 'réparer', vi: 'sửa' }, { fr: 'payer', vi: 'trả' }],
+      objects: [{ fr: 'un colis', vi: 'một bưu kiện' }, { fr: 'un document', vi: 'một tài liệu' }, { fr: 'une facture', vi: 'một hóa đơn' }, { fr: 'un ticket', vi: 'một phiếu/vé' }, { fr: 'une demande', vi: 'một yêu cầu' }]
+    },
+    {
+      topic: 'Khẩn cấp',
+      phrases: [
+        { fr: 'Au secours !', vi: 'Cứu với!', ex: 'Au secours !' },
+        { fr: 'Appelez la police', vi: 'Gọi cảnh sát', ex: 'Appelez la police !' },
+        { fr: 'J’ai besoin d’aide', vi: 'Tôi cần giúp đỡ', ex: 'J’ai besoin d’aide.' }
+      ],
+      verbs: [{ fr: 'appeler', vi: 'gọi' }, { fr: 'signaler', vi: 'báo' }, { fr: 'chercher', vi: 'tìm' }, { fr: 'aider', vi: 'giúp' }, { fr: 'protéger', vi: 'bảo vệ' }],
+      objects: [{ fr: 'une ambulance', vi: 'xe cứu thương' }, { fr: 'la police', vi: 'cảnh sát' }, { fr: 'un problème', vi: 'một vấn đề' }, { fr: 'mon téléphone', vi: 'điện thoại của tôi' }, { fr: 'mes papiers', vi: 'giấy tờ của tôi' }]
+    }
   ];
 
-  const generated = [];
-  for (let i = 0; i < count; i += 1) {
-    const level = levels[i % levels.length];
-    const topic = topics[i % topics.length];
-    const subject = subjects[i % subjects.length];
-    const verb = verbs[i % verbs.length];
-    const object = objects[i % objects.length];
-    const variant = Math.floor(i / (levels.length * topics.length)) + 1;
-    const word = `${verb.fr} ${object.fr} ${variant}`;
-    generated.push({
-      level,
-      topic,
-      word,
-      meaning: `${verb.vi} ${object.vi} (${variant})`,
-      example: `${subject} ${verb.fr} ${object.fr} chaque jour.`,
-      difficulty: Math.min(5, Math.max(1, Math.floor(i / 600) + 1))
-    });
+  const results = [];
+  const seen = new Set();
+  let cursor = 0;
+
+  function pushUnique(entry) {
+    const key = `${entry.level}|${entry.topic}|${entry.word}`.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    results.push(entry);
+    return true;
   }
-  return generated;
+
+  function pick(arr, index) {
+    return arr[index % arr.length];
+  }
+
+  while (results.length < count) {
+    const level = levels[cursor % levels.length];
+    const difficulty = levelDifficulty[level] || 3;
+    const topicDef = topics[cursor % topics.length];
+    const subject = subjects[cursor % subjects.length];
+    const time = genericTime[cursor % genericTime.length];
+
+    // 1) phrases cố định
+    const phrase = topicDef.phrases && topicDef.phrases.length ? pick(topicDef.phrases, cursor) : null;
+    if (phrase) {
+      pushUnique({
+        level,
+        topic: topicDef.topic,
+        word: phrase.fr,
+        meaning: phrase.vi,
+        example: phrase.ex,
+        difficulty
+      });
+    }
+
+    // 2) object từ vựng đơn
+    if (topicDef.objects && topicDef.objects.length) {
+      const obj = pick(topicDef.objects, cursor);
+      pushUnique({
+        level,
+        topic: topicDef.topic,
+        word: obj.fr,
+        meaning: obj.vi,
+        example: `Voici ${obj.fr}.`,
+        difficulty
+      });
+    }
+
+    // 3) cụm “động từ + bổ ngữ” theo đúng topic
+    if (topicDef.verbs && topicDef.objects && topicDef.verbs.length && topicDef.objects.length) {
+      const verb = pick(topicDef.verbs, cursor);
+      const obj = pick(topicDef.objects, Math.floor(cursor / 2));
+      const withTime = cursor % 3 === 0;
+      const phraseWord = `${verb.fr} ${obj.fr}${withTime ? ` ${time}` : ''}`;
+      pushUnique({
+        level,
+        topic: topicDef.topic,
+        word: phraseWord,
+        meaning: `${verb.vi} ${obj.vi}${withTime ? ` (${time})` : ''}`,
+        example: `${subject} ${verb.fr} ${obj.fr}${withTime ? ` ${time}` : ''}.`,
+        difficulty
+      });
+    }
+
+    cursor += 1;
+    if (cursor > 200000) break;
+  }
+
+  return results.slice(0, count);
 }
 
-const vocabularies = [...baseVocabularies, ...generateBulkVocabularies(3000)];
+const vocabularies = [...baseVocabularies, ...generateRealLifeVocabularies(3000)];
 
 const grammarLessons = [
   // A1 – nền tảng
@@ -1393,6 +1645,9 @@ function buildQuizQuestionsFromVocab(options = {}) {
   const questions = [];
   const used = new Set();
   const maxQuestions = Math.min(count, source.length);
+  const allowExtra = quizVocabSelectedLevel === 'all' && quizVocabSelectedTopic === 'all';
+  const meaningPool = Array.from(new Set(source.map(item => item.meaning).filter(Boolean)));
+  const wordPool = Array.from(new Set(source.map(item => item.word).filter(Boolean)));
 
   for (let i = 0; i < maxQuestions; i += 1) {
     // chọn 1 mục ngẫu nhiên chưa dùng
@@ -1409,8 +1664,8 @@ function buildQuizQuestionsFromVocab(options = {}) {
     const askMeaning = Math.random() < 0.55;
     if (askMeaning) {
       const correct = pick.meaning;
-      const exclude = new Set([correct]);
-      const distractors = shuffleArray(source.map(item => item.meaning).filter(Boolean)).filter(item => !exclude.has(item));
+      const distractors = shuffleArray(meaningPool.filter(item => item !== correct));
+      if (distractors.length < 3) continue;
       const choices = shuffleArray([correct, ...distractors.slice(0, 3)]);
       questions.push({
         level: pick.level,
@@ -1421,8 +1676,8 @@ function buildQuizQuestionsFromVocab(options = {}) {
       });
     } else {
       const correct = pick.word;
-      const exclude = new Set([correct]);
-      const distractors = shuffleArray(source.map(item => item.word).filter(Boolean)).filter(item => !exclude.has(item));
+      const distractors = shuffleArray(wordPool.filter(item => item !== correct));
+      if (distractors.length < 3) continue;
       const choices = shuffleArray([correct, ...distractors.slice(0, 3)]);
       questions.push({
         level: pick.level,
@@ -1434,8 +1689,8 @@ function buildQuizQuestionsFromVocab(options = {}) {
     }
   }
 
-  // luôn thêm vài câu mẫu cố định để đa dạng
-  const extra = shuffleArray(baseQuizQuestions).slice(0, 2);
+  // Chỉ thêm câu mẫu khi người dùng đang để “Tất cả” (để tránh cảm giác “không đúng chủ đề”)
+  const extra = allowExtra ? shuffleArray(baseQuizQuestions).slice(0, 2) : [];
   return shuffleArray([...questions, ...extra]).slice(0, Math.max(6, Math.min(12, questions.length + extra.length)));
 }
 
@@ -1462,10 +1717,11 @@ function buildQuizQuestionsFromGrammar(options = {}) {
     const correct = pick.title;
     const distractors = shuffleArray(source.map(item => item.title).filter(Boolean)).filter(item => item !== correct);
     const choices = shuffleArray([correct, ...distractors.slice(0, 3)]);
+    const detailSnippet = (pick.details || '').split('.').slice(0, 2).join('.').trim();
     questions.push({
       level: getGrammarLevelById(pick.id),
       topic: inferGrammarTags(pick.id)[0] || 'Ngữ pháp',
-      question: `Ví dụ sau thuộc chủ điểm nào?\n\n${pick.example}`,
+      question: `Bài ngữ pháp nào phù hợp với mô tả sau?\n\n${pick.summary}${detailSnippet ? `\nGợi ý: ${detailSnippet}.` : ''}\n\nVí dụ: ${pick.example}`,
       choices,
       answer: correct
     });
