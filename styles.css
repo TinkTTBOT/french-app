@@ -293,6 +293,50 @@ button {
   font-size: 0.75rem;
 }
 
+.grammar-card.completed {
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.grammar-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.grammar-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  color: #16a34a;
+  white-space: nowrap;
+}
+
+.grammar-details {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+}
+
+.grammar-meta {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.grammar-card-actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .dialogue-actions {
   margin-top: 18px;
   display: flex;
@@ -381,6 +425,19 @@ button {
 }
 
 .level-button.active {
+  background: var(--brand);
+  color: #fff;
+}
+
+.quiz-topic-button.active,
+.quiz-level-button.active {
+  background: var(--brand);
+  color: #fff;
+}
+
+.grammar-level-button.active,
+.grammar-tag-button.active,
+.grammar-status-button.active {
   background: var(--brand);
   color: #fff;
 }
