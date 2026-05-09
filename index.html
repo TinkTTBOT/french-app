@@ -81,6 +81,18 @@
           </div>
         </article>
 
+        <article class="card eval-card">
+          <div class="eval-header">
+            <p class="eyebrow">Đánh giá học tập</p>
+            <div class="eval-tabs">
+              <button class="pill eval-tab active" data-period="daily">Hôm nay</button>
+              <button class="pill eval-tab" data-period="weekly">Tuần này</button>
+              <button class="pill eval-tab" data-period="monthly">Tháng này</button>
+            </div>
+          </div>
+          <div id="evalContent" class="eval-content"></div>
+        </article>
+
         <div class="grid-3 cards-preview">
           <article class="small-card">
             <h4>Chủ đề phổ biến</h4>
@@ -125,11 +137,16 @@
         </div>
         <div class="topics-row" id="topicButtons"></div>
 
-        <div class="flashcard-card card">
-          <div>
-            <span class="flashcard-label">Từ tiếng Pháp</span>
-            <h2 id="flashcardWord">Bonjour</h2>
-            <p id="flashcardDefinition">Xin chào</p>
+        <div class="flashcard-scene" id="flashcardScene" title="Nhấn để lật thẻ">
+          <div class="flashcard-card card" id="flashcardInner">
+            <div class="flashcard-face flashcard-front">
+              <span class="flashcard-label">Từ tiếng Pháp</span>
+              <h2 id="flashcardWord">Bonjour</h2>
+            </div>
+            <div class="flashcard-face flashcard-back">
+              <span class="flashcard-label">Nghĩa tiếng Việt</span>
+              <p id="flashcardDefinition" class="flashcard-meaning">Xin chào</p>
+            </div>
           </div>
           <div class="flashcard-actions">
             <button id="playPronunciation" class="pill">Nghe</button>
@@ -152,6 +169,14 @@
         </div>
         <div class="search-bar">
           <input id="grammarSearch" type="search" placeholder="Tìm ngữ pháp..." />
+          <select id="grammarLevelFilter" class="grammar-level-select">
+            <option value="all">Tất cả cấp độ</option>
+            <option value="A1">A1</option>
+            <option value="A2">A2</option>
+            <option value="B1">B1</option>
+            <option value="B2">B2</option>
+            <option value="C1">C1</option>
+          </select>
         </div>
         <div class="card-grid" id="grammarList"></div>
       </section>
@@ -179,13 +204,20 @@
           <button class="pill practice-tab" data-tab="speaking">Luyện nói</button>
           <button class="pill practice-tab" data-tab="pronunciation">Phát âm</button>
           <button class="pill practice-tab" data-tab="dialogue">Hội thoại</button>
+          <button class="pill practice-tab" data-tab="listening">Nghe hiểu</button>
         </div>
 
-        <div class="practice-filters" aria-label="Bộ lọc luyện tập">
-          <div class="filter-group">
-            <label for="practiceLevelFilter">Mức độ</label>
-            <select id="practiceLevelFilter"></select>
-          </div>
+        <div class="levels-row" id="practiceLevelRow">
+          <button class="pill level-button active" data-practice-level="all">Tất cả</button>
+          <button class="pill level-button" data-practice-level="A1">A1</button>
+          <button class="pill level-button" data-practice-level="A2">A2</button>
+          <button class="pill level-button" data-practice-level="B1">B1</button>
+          <button class="pill level-button" data-practice-level="B2">B2</button>
+          <button class="pill level-button" data-practice-level="C1">C1</button>
+          <button class="pill level-button" data-practice-level="C2">C2</button>
+        </div>
+
+        <div class="practice-filters">
           <div class="filter-group">
             <label for="practiceTopicFilter">Chủ đề</label>
             <select id="practiceTopicFilter"></select>
@@ -238,7 +270,7 @@
               <h4>Phát âm chính xác</h4>
               <p id="pronunciationMeta" class="task-meta"></p>
               <p>Nghe mẫu, nói theo và nhận phản hồi phát âm.</p>
-              <p id="pronunciationPrompt">Je voudrais un café, s’il vous plaît.</p>
+              <p id="pronunciationPrompt">Je voudrais un café, s'il vous plaît.</p>
               <div class="practice-buttons">
                 <button id="playPronunciationPhrase" class="pill">Nghe mẫu</button>
                 <button id="startPronunciation" class="pill secondary">Bắt đầu phát âm</button>
@@ -250,12 +282,27 @@
           </article>
         </div>
 
+        <div id="listeningPanel" class="practice-panel" style="display:none;">
+          <article class="card practice-card">
+            <div>
+              <h4>Nghe và chọn nghĩa đúng</h4>
+              <p id="listeningMeta" class="task-meta"></p>
+              <div class="practice-buttons">
+                <button id="playListeningSentence" class="pill">🔊 Nghe câu</button>
+                <button id="nextListening" class="pill secondary">Câu khác</button>
+              </div>
+              <div id="listeningAnswers" class="answer-grid"></div>
+              <p id="listeningFeedback" class="feedback"></p>
+            </div>
+          </article>
+        </div>
+
         <div id="dialoguePanel" class="practice-panel" style="display:none;">
           <article class="card practice-card">
             <div>
               <h4>Hội thoại thực tế</h4>
-              <p>Đọc hội thoại, nghe và xem dịch nghĩa từng câu.</p>
               <p id="dialogueMeta" class="task-meta"></p>
+              <p>Đọc hội thoại, nghe và xem dịch nghĩa từng câu.</p>
               <div id="dialogueContent" class="dialogue-card">
                 <p id="dialogueTitle"><strong>Quán cà phê</strong></p>
                 <div id="dialogueText"></div>
@@ -278,17 +325,50 @@
             <p class="eyebrow">Quiz</p>
             <h3>Kiểm tra trình độ nhanh</h3>
           </div>
-          <button id="startQuiz" class="pill">Bắt đầu quiz</button>
+          <button id="startQuiz" class="pill">▶ Bắt đầu</button>
         </div>
 
-        <article class="card quiz-card">
+        <div class="levels-row" id="quizLevelRow">
+          <button class="pill level-button active" data-quiz-level="all">Tất cả</button>
+          <button class="pill level-button" data-quiz-level="A1">A1</button>
+          <button class="pill level-button" data-quiz-level="A2">A2</button>
+          <button class="pill level-button" data-quiz-level="B1">B1</button>
+          <button class="pill level-button" data-quiz-level="B2">B2</button>
+          <button class="pill level-button" data-quiz-level="C1">C1</button>
+          <button class="pill level-button" data-quiz-level="C2">C2</button>
+        </div>
+
+        <div class="quiz-filters">
+          <div class="filter-group">
+            <label for="quizTopicFilter">Chủ đề</label>
+            <select id="quizTopicFilter"></select>
+          </div>
+          <div class="filter-group">
+            <label for="quizCountFilter">Số câu</label>
+            <select id="quizCountFilter">
+              <option value="10">10 câu</option>
+              <option value="15" selected>15 câu</option>
+              <option value="20">20 câu</option>
+              <option value="30">30 câu</option>
+            </select>
+          </div>
+        </div>
+
+        <article class="card quiz-card" id="quizCard">
+          <div class="quiz-progress-wrap" id="quizProgressWrap" style="display:none;">
+            <div class="quiz-progress-bar">
+              <div class="quiz-progress-fill" id="quizProgressFill"></div>
+            </div>
+            <span class="quiz-progress-label" id="quizProgressLabel"></span>
+          </div>
           <div id="quizContainer">
-            <p id="quizQuestion">Nhấn "Bắt đầu quiz" để làm bài.</p>
+            <span id="quizQuestionMeta" class="task-meta"></span>
+            <p id="quizQuestion" class="quiz-question-text">Nhấn "Bắt đầu" để làm bài.</p>
             <div id="quizAnswers" class="answer-grid"></div>
           </div>
           <div class="quiz-footer">
-            <span id="quizStatus">Điểm: 0 / 0</span>
-            <button id="nextQuestion" class="pill secondary" disabled>Tiếp</button>
+            <span id="quizStatus" class="quiz-score-badge">Điểm: 0 / 0</span>
+            <button id="nextQuestion" class="pill secondary" disabled>Câu tiếp →</button>
           </div>
         </article>
       </section>
@@ -332,17 +412,22 @@
             <p id="authStatus" class="backup-status">Chưa đăng nhập.</p>
           </div>
           <div>
-            <h4>Chế độ tối / sáng</h4>
-            <p>Bật sáng chế độ tối để học đỡ mỏi mắt.</p>
-            <button id="themeToggleBottom" class="pill">Chuyển chế độ</button>
-          </div>
-          <div>
             <h4>Giọng đọc tiếng Pháp</h4>
-            <p>Chọn giọng đọc dùng cho nút “Nghe” (từ vựng, phát âm, hội thoại).</p>
+            <p>Chọn giọng đọc dùng cho nút "Nghe" (từ vựng, phát âm, hội thoại).</p>
             <div class="voice-settings">
               <select id="voiceSelect" aria-label="Chọn giọng đọc"></select>
               <button id="testVoice" class="pill secondary" type="button">Nghe thử</button>
             </div>
+          </div>
+          <div>
+            <h4>Âm thanh quiz</h4>
+            <p>Phát âm thanh phản hồi khi chọn đúng/sai trong quiz.</p>
+            <button id="quizSoundToggle" class="pill secondary">🔊 Âm thanh: Bật</button>
+          </div>
+          <div>
+            <h4>Chế độ tối / sáng</h4>
+            <p>Bật sáng chế độ tối để học đỡ mỏi mắt.</p>
+            <button id="themeToggleBottom" class="pill">Chuyển chế độ</button>
           </div>
           <div>
             <h4>Backup bài học</h4>
@@ -363,6 +448,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <div id="toastContainer" class="toast-container"></div>
+  <script src="vocabulary.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
