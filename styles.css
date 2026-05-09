@@ -293,50 +293,6 @@ button {
   font-size: 0.75rem;
 }
 
-.grammar-card.completed {
-  border-color: rgba(34, 197, 94, 0.35);
-}
-
-.grammar-card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.grammar-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  background: rgba(34, 197, 94, 0.12);
-  border: 1px solid rgba(34, 197, 94, 0.25);
-  color: #16a34a;
-  white-space: nowrap;
-}
-
-.grammar-details {
-  margin-top: 12px;
-  padding: 14px 16px;
-  border-radius: 18px;
-  background: var(--surface-strong);
-  border: 1px solid var(--border);
-}
-
-.grammar-meta {
-  margin: 10px 0 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.grammar-card-actions {
-  margin-top: 14px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
 .dialogue-actions {
   margin-top: 18px;
   display: flex;
@@ -375,6 +331,42 @@ button {
   margin-bottom: 24px;
 }
 
+.practice-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.filter-group {
+  display: grid;
+  gap: 6px;
+  min-width: 180px;
+  flex: 1;
+}
+
+.filter-group label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.filter-group select {
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  padding: 12px 14px;
+  background: var(--surface);
+  color: var(--text);
+  box-sizing: border-box;
+}
+
+.dark .filter-group select {
+  background: #0d2143;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f7fbff;
+}
+
 .dialogue-card {
   background: var(--surface-strong);
   border: 1px solid var(--border);
@@ -393,6 +385,24 @@ button {
 .dialogue-translation {
   margin: 6px 0 0;
   color: var(--muted);
+}
+
+.task-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 10px 0 14px;
+}
+
+.dark .task-meta {
+  background: rgba(129, 177, 255, 0.16);
+  color: var(--brand);
 }
 
 .search-bar input {
@@ -425,19 +435,6 @@ button {
 }
 
 .level-button.active {
-  background: var(--brand);
-  color: #fff;
-}
-
-.quiz-topic-button.active,
-.quiz-level-button.active {
-  background: var(--brand);
-  color: #fff;
-}
-
-.grammar-level-button.active,
-.grammar-tag-button.active,
-.grammar-status-button.active {
   background: var(--brand);
   color: #fff;
 }
@@ -690,6 +687,30 @@ button {
   margin-top: 10px;
   color: var(--muted);
   font-size: 0.88rem;
+}
+
+.voice-settings {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.voice-settings select {
+  flex: 1;
+  min-width: 220px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  padding: 12px 14px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.dark .voice-settings select {
+  background: #0d2143;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f7fbff;
 }
 
 .password-strength {
